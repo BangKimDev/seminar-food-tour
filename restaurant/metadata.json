@@ -1,0 +1,5 @@
+{
+  "name": "FoodStreet Manager",
+  "description": "Ứng dụng quản lý dành cho chủ quán ăn trong phố ẩm thực: quản lý menu, thông tin quán và thuyết minh GPS.",
+  "requestFramePermissions": ["geolocation"]
+}
