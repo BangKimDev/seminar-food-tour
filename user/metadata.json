@@ -1,0 +1,7 @@
+{
+  "name": "FoodieGuide - Street Food Audio Tour",
+  "description": "A mobile-first GPS-based audio guide for food street tourists with geofencing and automatic playback.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
