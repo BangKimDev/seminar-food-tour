@@ -1,0 +1,5 @@
+{
+  "name": "POI & Tour Admin Dashboard",
+  "description": "An administrative dashboard for managing Points of Interest and creating sightseeing tours with reorderable routes.",
+  "requestFramePermissions": ["geolocation"]
+}
