@@ -1,39 +1,53 @@
-import { Timestamp } from 'firebase/firestore';
 
-export type POIType = 'main' | 'wc' | 'ticket' | 'parking' | 'boat_dock';
+export type POICategory = 'main' | 'wc' | 'ticket' | 'parking' | 'boat';
 
 export interface POI {
   id: string;
   name: string;
-  description: string;
-  type: POIType;
-  location: {
-    lat: number;
-    lng: number;
-  };
-  createdAt: Timestamp;
+  category: POICategory;
+  lat: number;
+  lng: number;
+  createdAt: string;
 }
 
-export interface Tour {
+export interface Restaurant {
   id: string;
+  poiId: string;
   name: string;
   description: string;
-  poiIds: string[];
-  createdAt: Timestamp;
+  cuisine?: string;
+  openingHours?: string;
+  createdAt: string;
 }
 
-export const POI_TYPE_LABELS: Record<POIType, string> = {
-  main: 'Điểm chính',
-  wc: 'Nhà vệ sinh',
-  ticket: 'Quầy vé',
-  parking: 'Bãi đỗ xe',
-  boat_dock: 'Bến thuyền'
-};
+export interface AudioGuide {
+  id: string;
+  restaurantId: string;
+  language: string;
+  content: string;
+  audioUrl?: string;
+  createdAt: string;
+}
 
-export const POI_TYPE_COLORS: Record<POIType, string> = {
-  main: '#EF4444', // red-500
-  wc: '#3B82F6',   // blue-500
-  ticket: '#F59E0B', // amber-500
-  parking: '#10B981', // emerald-500
-  boat_dock: '#8B5CF6' // violet-500
-};
+export type AppState = 'login' | 'dashboard' | 'pois' | 'restaurants' | 'audio';
+
+// ─── Auth & API types ────────────────────────────────────────────────────────
+
+export interface AuthUser {
+  id: string;
+  username: string;
+  email: string;
+  displayName: string;
+  role: 'admin' | 'super_admin' | 'content_editor';
+}
+
+export interface ApiResponse<T> {
+  data: T;
+  total?: number;
+  message?: string;
+}
+
+export interface ApiError {
+  message: string;
+  statusCode: number;
+}
