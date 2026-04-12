@@ -20,13 +20,21 @@ let _restaurants: Restaurant[] = [
   {
     id: 'res-1',
     poiId: 'poi-1',
-    name: 'Nhà hàng Bến Thuyền',
-    description:
-      'Nhà hàng chuyên phục vụ các món đặc sản dê núi Ninh Bình ngay cạnh bến thuyền Tràng An. Không gian thoáng mát, view nhìn ra dòng sông Ngô Đồng thơ mộng.',
-    cuisine: 'Đặc sản Ninh Bình',
-    openingHours: '08:00 - 22:00',
+    name: 'Phở Hòa Pasteur',
+    description: 'Một trong những quán phở lâu đời và nổi tiếng nhất tại trung tâm TP.HCM. Hương vị phở Bắc đặc trưng kết hợp với các loại rau thơm miền Nam.',
+    cuisine: 'Phở',
+    openingHours: '06:00 - 23:00',
     createdAt: new Date().toISOString(),
   },
+  {
+    id: 'res-2',
+    poiId: 'poi-3',
+    name: 'Cơm tấm Mộc',
+    description: 'Món sườn nướng khói thơm lừng đặc trưng, hạt tấm ngon và chả cua đặc biệt.',
+    cuisine: 'Cơm tấm',
+    openingHours: '07:00 - 22:00',
+    createdAt: new Date().toISOString(),
+  }
 ];
 
 export const restaurantService = {
