@@ -44,6 +44,7 @@ import { motion, AnimatePresence } from 'motion/react';
 interface POIManagementProps {
   pois: POI[];
   onAdd: (poi: Omit<POI, 'id' | 'createdAt'>) => void;
+  onUpdate: (id: string, poi: Partial<Omit<POI, 'id' | 'createdAt'>>) => void;
   onDelete: (id: string) => void;
 }
 
@@ -51,15 +52,15 @@ const categoryConfig: Record<
   POICategory,
   { label: string; color: string; bgColor: string; dotColor: string }
 > = {
-  main:    { label: 'Điểm chính',  color: 'text-blue-700',   bgColor: 'bg-blue-100',   dotColor: 'bg-blue-500' },
-  wc:      { label: 'WC',          color: 'text-green-700',  bgColor: 'bg-green-100',  dotColor: 'bg-green-500' },
-  ticket:  { label: 'Bán vé',      color: 'text-orange-700', bgColor: 'bg-orange-100', dotColor: 'bg-orange-500' },
-  parking: { label: 'Gửi xe',      color: 'text-purple-700', bgColor: 'bg-purple-100', dotColor: 'bg-purple-500' },
-  boat:    { label: 'Bến thuyền',  color: 'text-red-700',    bgColor: 'bg-red-100',    dotColor: 'bg-red-500' },
+  main: { label: 'Điểm chính', color: 'text-blue-700', bgColor: 'bg-blue-100', dotColor: 'bg-blue-500' },
+  wc: { label: 'WC', color: 'text-green-700', bgColor: 'bg-green-100', dotColor: 'bg-green-500' },
+  ticket: { label: 'Bán vé', color: 'text-orange-700', bgColor: 'bg-orange-100', dotColor: 'bg-orange-500' },
+  parking: { label: 'Gửi xe', color: 'text-purple-700', bgColor: 'bg-purple-100', dotColor: 'bg-purple-500' },
+  boat: { label: 'Bến thuyền', color: 'text-red-700', bgColor: 'bg-red-100', dotColor: 'bg-red-500' },
 };
 
-export const POIManagement: React.FC<POIManagementProps> = ({ pois, onAdd, onDelete }) => {
-  const [isAdding, setIsAdding] = useState(false);
+export const POIManagement: React.FC<POIManagementProps> = ({ pois, onAdd, onUpdate, onDelete }) => {
+  const [dialogMode, setDialogMode] = useState<'add' | 'edit' | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [selectedPoi, setSelectedPoi] = useState<POI | null>(null);
@@ -74,15 +75,46 @@ export const POIManagement: React.FC<POIManagementProps> = ({ pois, onAdd, onDel
       toast.error('Vui lòng điền đầy đủ thông tin và chọn vị trí trên bản đồ');
       return;
     }
-    onAdd(newPoi as Omit<POI, 'id' | 'createdAt'>);
-    setIsAdding(false);
-    setNewPoi({ category: 'main' });
-    toast.success('Đã thêm POI mới thành công');
+
+    if (dialogMode === 'add') {
+      onAdd(newPoi as Omit<POI, 'id' | 'createdAt'>);
+      toast.success('Đã thêm POI mới thành công');
+    } else if (dialogMode === 'edit' && newPoi.id) {
+      onUpdate(newPoi.id, {
+        name: newPoi.name,
+        category: newPoi.category,
+        lat: newPoi.lat,
+        lng: newPoi.lng,
+      });
+      toast.success('Đã cập nhật POI thành công');
+    }
+
+    handleClose();
   };
 
   const handleClose = () => {
-    setIsAdding(false);
+    setDialogMode(null);
     setNewPoi({ category: 'main' });
+  };
+
+  const openAddDialog = () => {
+    setNewPoi({ category: 'main' });
+    setDialogMode('add');
+  };
+
+  const openEditDialog = (poi: POI, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setNewPoi({ ...poi });
+    setDialogMode('edit');
+  };
+
+  const confirmDelete = (poi: POI, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (window.confirm(`Bạn có chắc chắn muốn xóa POI "${poi.name}"?\nThao tác này sẽ xóa mọi quán ăn thuộc POI này!`)) {
+      onDelete(poi.id);
+      toast.success(`Đã xóa POI "${poi.name}"`);
+      if (selectedPoi?.id === poi.id) setSelectedPoi(null);
+    }
   };
 
   return (
@@ -103,22 +135,20 @@ export const POIManagement: React.FC<POIManagementProps> = ({ pois, onAdd, onDel
           <div className="flex items-center bg-slate-100 rounded-lg p-1 gap-1">
             <button
               onClick={() => setViewMode('list')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                viewMode === 'list'
-                  ? 'bg-white text-slate-800 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'list'
+                ? 'bg-white text-slate-800 shadow-sm'
+                : 'text-slate-500 hover:text-slate-700'
+                }`}
             >
               <List className="w-4 h-4" />
               Danh sách
             </button>
             <button
               onClick={() => setViewMode('map')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                viewMode === 'map'
-                  ? 'bg-white text-slate-800 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'map'
+                ? 'bg-white text-slate-800 shadow-sm'
+                : 'text-slate-500 hover:text-slate-700'
+                }`}
             >
               <MapIcon className="w-4 h-4" />
               Bản đồ
@@ -126,7 +156,7 @@ export const POIManagement: React.FC<POIManagementProps> = ({ pois, onAdd, onDel
           </div>
         </div>
 
-        <Button onClick={() => setIsAdding(true)} className="gap-2">
+        <Button onClick={openAddDialog} className="gap-2">
           <Plus className="w-4 h-4" />
           Thêm POI mới
         </Button>
@@ -213,7 +243,8 @@ export const POIManagement: React.FC<POIManagementProps> = ({ pois, onAdd, onDel
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8 text-slate-500 hover:text-slate-700"
+                                  className="h-8 w-8 text-slate-500 hover:text-blue-600 hover:bg-blue-50"
+                                  onClick={(e) => openEditDialog(poi, e)}
                                 >
                                   <Edit2 className="w-4 h-4" />
                                 </Button>
@@ -221,10 +252,7 @@ export const POIManagement: React.FC<POIManagementProps> = ({ pois, onAdd, onDel
                                   variant="ghost"
                                   size="icon"
                                   className="h-8 w-8 text-red-400 hover:text-red-600 hover:bg-red-50"
-                                  onClick={() => {
-                                    onDelete(poi.id);
-                                    toast.success(`Đã xóa POI "${poi.name}"`);
-                                  }}
+                                  onClick={(e) => confirmDelete(poi, e)}
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
@@ -263,7 +291,7 @@ export const POIManagement: React.FC<POIManagementProps> = ({ pois, onAdd, onDel
                 </CardHeader>
                 <CardContent className="p-0">
                   <MapPicker
-                    onLocationSelect={() => {}}
+                    onLocationSelect={() => { }}
                     existingPois={pois.map(p => ({ lat: p.lat, lng: p.lng, name: p.name }))}
                     readOnly={true}
                   />
@@ -284,11 +312,10 @@ export const POIManagement: React.FC<POIManagementProps> = ({ pois, onAdd, onDel
                   return (
                     <div
                       key={poi.id}
-                      className={`p-3 rounded-lg border transition-all cursor-pointer hover:shadow-sm ${
-                        selectedPoi?.id === poi.id
-                          ? 'border-blue-300 bg-blue-50'
-                          : 'border-slate-100 bg-white hover:border-slate-200'
-                      }`}
+                      className={`p-3 rounded-lg border transition-all cursor-pointer hover:shadow-sm ${selectedPoi?.id === poi.id
+                        ? 'border-blue-300 bg-blue-50'
+                        : 'border-slate-100 bg-white hover:border-slate-200'
+                        }`}
                       onClick={() => setSelectedPoi(poi)}
                     >
                       <div className="flex items-start justify-between gap-2">
@@ -304,18 +331,24 @@ export const POIManagement: React.FC<POIManagementProps> = ({ pois, onAdd, onDel
                             {poi.lat}, {poi.lng}
                           </p>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50 flex-shrink-0"
-                          onClick={e => {
-                            e.stopPropagation();
-                            onDelete(poi.id);
-                            toast.success(`Đã xóa POI "${poi.name}"`);
-                          }}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
+                        <div className="flex flex-col gap-1 flex-shrink-0">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-slate-400 hover:text-blue-600 hover:bg-blue-50"
+                            onClick={e => openEditDialog(poi, e)}
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50"
+                            onClick={e => confirmDelete(poi, e)}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -326,19 +359,19 @@ export const POIManagement: React.FC<POIManagementProps> = ({ pois, onAdd, onDel
         )}
       </AnimatePresence>
 
-      {/* Dialog: Thêm POI */}
-      <Dialog open={isAdding} onOpenChange={open => !open && handleClose()}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      {/* Dialog: Thêm/Sửa POI */}
+      <Dialog open={dialogMode !== null} onOpenChange={open => !open && handleClose()}>
+        <DialogContent className="max-w-[80vw] sm:max-w-[80vw] max-h-[90vh]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <MapPin className="w-5 h-5 text-primary" />
-              Thiết lập POI mới
+              {dialogMode === 'add' ? 'Thiết lập POI mới' : 'Chỉnh sửa POI'}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-2">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 py-2">
             {/* Left: Form */}
-            <div className="space-y-4">
+            <div className="lg:col-span-5 space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="poi-name">
                   Tên điểm <span className="text-red-500">*</span>
@@ -407,7 +440,7 @@ export const POIManagement: React.FC<POIManagementProps> = ({ pois, onAdd, onDel
             </div>
 
             {/* Right: Map */}
-            <div className="space-y-2">
+            <div className="lg:col-span-7 space-y-2">
               <Label>
                 Chọn vị trí trên bản đồ <span className="text-red-500">*</span>
               </Label>
@@ -416,6 +449,7 @@ export const POIManagement: React.FC<POIManagementProps> = ({ pois, onAdd, onDel
                 existingPois={pois.map(p => ({ lat: p.lat, lng: p.lng, name: p.name }))}
                 initialLat={newPoi.lat}
                 initialLng={newPoi.lng}
+                height="450px"
               />
             </div>
           </div>
