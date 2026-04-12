@@ -16,6 +16,7 @@ import { Dashboard }            from './pages/Dashboard';
 import { POIManagement }        from './pages/POIManagement';
 import { RestaurantManagement } from './pages/RestaurantManagement';
 import { AudioGuideManagement } from './pages/AudioGuideManagement';
+import { MyRestaurant }         from './pages/MyRestaurant';
 import { AppState }             from './types';
 import { Toaster }              from '@/components/ui/sonner';
 import { toast }                from 'sonner';
@@ -28,16 +29,22 @@ import { useAudioGuides }   from './hooks/useAudioGuides';
 
 export default function App() {
   // ── Auth ──────────────────────────────────────────────────────────────────
-  const { isLoggedIn, isLoading: authLoading, login, logout } = useAuth();
+  const { user, isLoggedIn, isLoading: authLoading, login, logout } = useAuth();
 
   // ── Navigation ────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<AppState>('dashboard');
+
+  // Chuyển hướng tab mặc định nếu là restaurant_owner
+  if (user?.role === 'restaurant_owner' && (activeTab === 'dashboard' || activeTab === 'pois' || activeTab === 'restaurants')) {
+    setActiveTab('my_restaurant');
+  }
 
   // ── Data hooks ────────────────────────────────────────────────────────────
   const {
     pois,
     isLoading: poisLoading,
     addPoi,
+    updatePoi,
     deletePoi,
   } = usePois();
 
@@ -74,6 +81,14 @@ export default function App() {
       // toast được hiện trong POIManagement (đã có sẵn)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Lỗi thêm POI');
+    }
+  };
+
+  const handleUpdatePoi = async (id: string, payload: Parameters<typeof updatePoi>[1]) => {
+    try {
+      await updatePoi(id, payload);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Lỗi cập nhật POI');
     }
   };
 
@@ -131,21 +146,31 @@ export default function App() {
     );
   }
 
+  // Lọc dữ liệu quán ăn nếu là chủ quán
+  const accessibleRestaurants = user?.role === 'restaurant_owner' 
+    ? restaurants.filter(r => r.id === user.restaurantId)
+    : restaurants;
+
   // ── Main App ──────────────────────────────────────────────────────────────
   return (
-    <Layout activeTab={activeTab} onTabChange={setActiveTab} onLogout={logout}>
+    <Layout activeTab={activeTab} user={user} onTabChange={setActiveTab} onLogout={logout}>
 
-      {activeTab === 'dashboard' && <Dashboard />}
+      {activeTab === 'dashboard' && user?.role !== 'restaurant_owner' && <Dashboard />}
 
-      {activeTab === 'pois' && (
+      {activeTab === 'pois' && user?.role !== 'restaurant_owner' && (
         <POIManagement
           pois={pois}
           onAdd={handleAddPoi}
+          onUpdate={handleUpdatePoi}
           onDelete={handleDeletePoi}
         />
       )}
 
-      {activeTab === 'restaurants' && (
+      {activeTab === 'my_restaurant' && user?.role === 'restaurant_owner' && user.restaurantId && (
+        <MyRestaurant restaurantId={user.restaurantId} />
+      )}
+
+      {activeTab === 'restaurants' && user?.role !== 'restaurant_owner' && (
         <RestaurantManagement
           restaurants={restaurants}
           pois={pois}
@@ -156,7 +181,7 @@ export default function App() {
 
       {activeTab === 'audio' && (
         <AudioGuideManagement
-          restaurants={restaurants}
+          restaurants={accessibleRestaurants}
           audioGuides={audioGuides}
           onAdd={handleAddAudioGuide}
           onDelete={handleDeleteAudioGuide}

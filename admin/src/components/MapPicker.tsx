@@ -56,9 +56,10 @@ interface MapPickerProps {
   initialLng?: number;
   existingPois?: ExistingPOI[];
   readOnly?: boolean; // Khi true: chỉ xem, không cho phép click chọn vị trí
+  height?: string;
 }
 
-const DEFAULT_CENTER: [number, number] = [20.2566, 105.8923]; // Tràng An, Ninh Bình
+const DEFAULT_CENTER: [number, number] = [10.7769, 106.7009]; // TP.HCM (Quận 1)
 const DEFAULT_ZOOM = 15;
 
 export const MapPicker: React.FC<MapPickerProps> = ({
@@ -67,6 +68,7 @@ export const MapPicker: React.FC<MapPickerProps> = ({
   initialLng,
   existingPois = [],
   readOnly = false,
+  height,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -191,7 +193,7 @@ export const MapPicker: React.FC<MapPickerProps> = ({
       <div
         ref={mapContainerRef}
         style={{
-          height: readOnly ? '450px' : '340px',
+          height: height || (readOnly ? '450px' : '340px'),
           width: '100%',
           borderRadius: readOnly ? '0' : '8px',
           zIndex: 0,
