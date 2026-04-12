@@ -29,7 +29,7 @@ export const AudioGuideManagement: React.FC<AudioGuideManagementProps> = ({
   const [previewContent, setPreviewContent] = useState('');
   const [previewAudio, setPreviewAudio] = useState<string | null>(null);
 
-  const languages = ['English', 'Korean', 'Japanese', 'Chinese', 'French'];
+  const languages = ['English', 'Korean', 'Japanese', 'Chinese', 'French', 'Vietnamese'];
 
   const selectedRes = restaurants.find(r => r.id === selectedResId);
   const existingGuides = audioGuides.filter(g => g.restaurantId === selectedResId);
