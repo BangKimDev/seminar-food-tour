@@ -10,13 +10,14 @@ import {
   User
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { AppState } from '@/src/types';
+import { AppState, AuthUser } from '@/src/types';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
 interface LayoutProps {
   children: React.ReactNode;
   activeTab: AppState;
+  user: AuthUser;
   onTabChange: (tab: AppState) => void;
   onLogout: () => void;
 }
@@ -24,10 +25,16 @@ interface LayoutProps {
 export const Layout: React.FC<LayoutProps> = ({ 
   children, 
   activeTab, 
+  user,
   onTabChange,
   onLogout 
 }) => {
-  const menuItems = [
+  const isOwner = user.role === 'restaurant_owner';
+
+  const menuItems = isOwner ? [
+    { id: 'my_restaurant', label: 'Quán ăn của tôi', icon: Utensils },
+    { id: 'audio', label: 'Quản lý thuyết minh', icon: Mic2 },
+  ] : [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'pois', label: 'Quản lý POIs', icon: MapIcon },
     { id: 'restaurants', label: 'Quản lý quán ăn', icon: Utensils },
@@ -77,8 +84,8 @@ export const Layout: React.FC<LayoutProps> = ({
               <User className="w-4 h-4 text-slate-500" />
             </div>
             <div className="flex-1 overflow-hidden">
-              <p className="text-sm font-medium truncate">Admin User</p>
-              <p className="text-xs text-slate-500 truncate">admin@system.com</p>
+              <p className="text-sm font-medium truncate">{user.displayName}</p>
+              <p className="text-xs text-slate-500 truncate">{user.email}</p>
             </div>
           </div>
           <Button 
