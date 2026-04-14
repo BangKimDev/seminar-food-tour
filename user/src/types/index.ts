@@ -4,21 +4,21 @@
  */
 
 export interface POI {
-  id: string;
-  name: string;
-  specialty: string;
-  hours: string;
-  rating: number;
-  lat: number;
-  lng: number;
-  audioUrl: string;
-  description: string;
-  image: string;
+    id: string;
+    name: string;
+    specialty: string;
+    hours: string;
+    rating: number;
+    lat: number;
+    lng: number;
+    audioUrl: string;
+    description: string;
+    image: string;
 }
 
 export interface Location {
-  lat: number;
-  lng: number;
+    lat: number;
+    lng: number;
 }
 
 export type TabType = 'map' | 'list' | 'tracking';
