@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { POI } from '../types';
+import { POI } from '../types/index.ts';
 
 export const MOCK_POIS: POI[] = [
     {

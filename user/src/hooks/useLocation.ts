@@ -4,14 +4,32 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Location, POI } from '../types';
-import { MOCK_POIS } from '../data/mockData';
-import { calculateDistance } from '../utils/geoUtils';
+import { Location, POI } from '../types/index.ts';
+import { MOCK_POIS } from '../data/mockData.ts';
+import { calculateDistance } from '../utils/geoUtils.ts';
 
 export function useLocationTracking(isTracking: boolean) {
     const [userLocation, setUserLocation] = useState<Location>({ lat: 21.0320, lng: 105.8490 });
     const [activeGeofencePoi, setActiveGeofencePoi] = useState<POI | null>(null);
     const [notifications, setNotifications] = useState<string[]>([]);
+
+    // Hỏi và lấy vị trí thực tế của người dùng khi bắt đầu sử dụng app
+    useEffect(() => {
+        if ('geolocation' in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    setUserLocation({
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    });
+                },
+                (error) => {
+                    console.warn("Lỗi lấy vị trí người dùng:", error.message);
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        }
+    }, []);
 
     // Simulate movement
     useEffect(() => {
