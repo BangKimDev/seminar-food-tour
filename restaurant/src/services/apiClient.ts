@@ -1,30 +1,15 @@
-/**
- * Base HTTP client.
- * Tự động đính kèm JWT Bearer token từ localStorage vào mọi request.
- *
- * ASSUMPTION: Backend REST API nhận Authorization: Bearer <token>
- * Khi VITE_API_URL không được set → các service sẽ dùng mock thay thế.
- */
-
-import { authService } from './authService';
-
 const BASE_URL = (import.meta.env.VITE_API_URL as string) || '';
 const API_PREFIX = '/api';
 
+const getToken = (): string | null => localStorage.getItem('owner_token');
+
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const token = authService.getToken();
+  const token = getToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
   };
-  
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-    console.log('Sending request to:', `${BASE_URL}${API_PREFIX}${endpoint}`);
-    console.log('With token:', token.substring(0, 20) + '...');
-  } else {
-    console.warn('No auth token found for request:', endpoint);
-  }
+  if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const res = await fetch(`${BASE_URL}${API_PREFIX}${endpoint}`, { ...options, headers });
 

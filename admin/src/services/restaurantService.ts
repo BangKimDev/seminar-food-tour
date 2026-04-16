@@ -11,7 +11,7 @@ import { Restaurant, ApiResponse } from '../types';
  *   DELETE /restaurants/:id             → 204 (cascade xóa audio_guides)
  */
 
-const USE_MOCK = !(import.meta.env.VITE_API_URL as string);
+const USE_MOCK = !import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URL === '';
 
 const delay = <T>(data: T, ms = 350): Promise<T> =>
   new Promise(r => setTimeout(() => r(data), ms));
@@ -24,6 +24,7 @@ let _restaurants: Restaurant[] = [
     description: 'Một trong những quán phở lâu đời và nổi tiếng nhất tại trung tâm TP.HCM. Hương vị phở Bắc đặc trưng kết hợp với các loại rau thơm miền Nam.',
     cuisine: 'Phở',
     openingHours: '06:00 - 23:00',
+    status: 'approved',
     createdAt: new Date().toISOString(),
   },
   {
@@ -33,6 +34,7 @@ let _restaurants: Restaurant[] = [
     description: 'Món sườn nướng khói thơm lừng đặc trưng, hạt tấm ngon và chả cua đặc biệt.',
     cuisine: 'Cơm tấm',
     openingHours: '07:00 - 22:00',
+    status: 'approved',
     createdAt: new Date().toISOString(),
   }
 ];
@@ -47,8 +49,7 @@ export const restaurantService = {
     }
     const params = new URLSearchParams({ search });
     if (poiId) params.set('poiId', poiId);
-    const res = await apiClient.get<ApiResponse<Restaurant[]>>(`/restaurants?${params}`);
-    return res.data;
+    return apiClient.get<Restaurant[]>(`/restaurants?${params}`);
   },
 
   async create(payload: Omit<Restaurant, 'id' | 'createdAt'>): Promise<Restaurant> {
