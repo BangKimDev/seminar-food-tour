@@ -6,19 +6,27 @@
  * Khi VITE_API_URL không được set → các service sẽ dùng mock thay thế.
  */
 
-const BASE_URL = (import.meta.env.VITE_API_URL as string) || '';
+import { authService } from './authService';
 
-const getToken = (): string | null => localStorage.getItem('auth_token');
+const BASE_URL = (import.meta.env.VITE_API_URL as string) || '';
+const API_PREFIX = '/api';
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const token = getToken();
+  const token = authService.getToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
   };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+    console.log('Sending request to:', `${BASE_URL}${API_PREFIX}${endpoint}`);
+    console.log('With token:', token.substring(0, 20) + '...');
+  } else {
+    console.warn('No auth token found for request:', endpoint);
+  }
 
-  const res = await fetch(`${BASE_URL}${endpoint}`, { ...options, headers });
+  const res = await fetch(`${BASE_URL}${API_PREFIX}${endpoint}`, { ...options, headers });
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: `HTTP ${res.status}` }));

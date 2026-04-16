@@ -14,7 +14,7 @@ import { POI, ApiResponse } from '../types';
  * Mock store tồn tại trong memory — bị reset khi reload page (hành vi OK cho POC).
  */
 
-const USE_MOCK = !(import.meta.env.VITE_API_URL as string);
+const USE_MOCK = !import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URL === '';
 
 const delay = <T>(data: T, ms = 350): Promise<T> =>
   new Promise(r => setTimeout(() => r(data), ms));
@@ -36,10 +36,7 @@ export const poiService = {
         : [..._pois];
       return delay(result);
     }
-    const res = await apiClient.get<ApiResponse<POI[]>>(
-      `/pois?search=${encodeURIComponent(search)}`
-    );
-    return res.data;
+    return apiClient.get<POI[]>(`/pois?search=${encodeURIComponent(search)}`);
   },
 
   async create(payload: Omit<POI, 'id' | 'createdAt'>): Promise<POI> {

@@ -13,7 +13,7 @@ import { AudioGuide, ApiResponse } from '../types';
  * Với backend thực, cần upload file riêng và lưu URL cloud storage.
  */
 
-const USE_MOCK = !(import.meta.env.VITE_API_URL as string);
+const USE_MOCK = !import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URL === '';
 
 const delay = <T>(data: T, ms = 300): Promise<T> =>
   new Promise(r => setTimeout(() => r(data), ms));
@@ -25,11 +25,9 @@ export const audioGuideService = {
     if (USE_MOCK) {
       return delay(_guides.filter(g => g.restaurantId === restaurantId));
     }
-    const res = await apiClient.get<ApiResponse<AudioGuide[]>>(
-      `/audio-guides?restaurantId=${encodeURIComponent(restaurantId)}`
+    return apiClient.get<AudioGuide[]>(
+      `/audio-guides/restaurant/${encodeURIComponent(restaurantId)}`
     );
-    // Hỗ trợ cả response dạng array trực tiếp hoặc wrapped
-    return Array.isArray(res) ? res : res.data;
   },
 
   async create(payload: Omit<AudioGuide, 'id' | 'createdAt'>): Promise<AudioGuide> {

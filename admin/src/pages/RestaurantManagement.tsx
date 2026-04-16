@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { POI, Restaurant } from '@/src/types';
+import { POI, Restaurant } from '../types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +16,7 @@ interface RestaurantManagementProps {
   restaurants: Restaurant[];
   pois: POI[];
   onAdd: (restaurant: Omit<Restaurant, 'id' | 'createdAt'>) => void;
+  onUpdate: (id: string, restaurant: Partial<Omit<Restaurant, 'id' | 'createdAt'>>) => void;
   onDelete: (id: string) => void;
 }
 
@@ -23,28 +24,77 @@ export const RestaurantManagement: React.FC<RestaurantManagementProps> = ({
   restaurants, 
   pois, 
   onAdd, 
+  onUpdate,
   onDelete 
 }) => {
   const [isAdding, setIsAdding] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [newRestaurant, setNewRestaurant] = useState<Partial<Restaurant>>({});
+  const [formData, setFormData] = useState<Partial<Restaurant>>({});
 
   const filteredRestaurants = restaurants.filter(r => 
     r.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleSave = () => {
-    if (!newRestaurant.name || !newRestaurant.poiId || !newRestaurant.description) {
+    if (!formData.name || !formData.poiId || !formData.description) {
       toast.error('Vui lòng điền đầy đủ thông tin và chọn POI liên kết');
       return;
     }
-    onAdd(newRestaurant as Omit<Restaurant, 'id' | 'createdAt'>);
+    onAdd({
+      name: formData.name,
+      poiId: formData.poiId,
+      description: formData.description,
+      cuisine: formData.cuisine,
+      openingHours: formData.openingHours,
+      status: 'approved',
+    });
     setIsAdding(false);
-    setNewRestaurant({});
+    setFormData({});
     toast.success('Đã thêm quán ăn mới thành công');
   };
 
-  const getPoiName = (id: string) => pois.find(p => p.id === id)?.name || 'N/A';
+  const handleUpdate = () => {
+    if (!editingId || !formData.name || !formData.description) {
+      toast.error('Vui lòng điền đầy đủ thông tin');
+      return;
+    }
+    onUpdate(editingId, {
+      name: formData.name,
+      description: formData.description,
+      cuisine: formData.cuisine,
+      openingHours: formData.openingHours,
+    });
+    setIsEditing(false);
+    setEditingId(null);
+    setFormData({});
+    toast.success('Đã cập nhật quán ăn thành công');
+  };
+
+  const openEditDialog = (restaurant: Restaurant) => {
+    setEditingId(restaurant.id);
+    setFormData({
+      name: restaurant.name,
+      poiId: restaurant.poiId,
+      description: restaurant.description,
+      cuisine: restaurant.cuisine,
+      openingHours: restaurant.openingHours,
+    });
+    setIsEditing(true);
+  };
+
+  const getPoiName = (id: string | undefined) => {
+    if (!id) return 'Chưa liên kết';
+    return pois.find(p => p.id === id)?.name || 'N/A';
+  };
+
+  const closeDialog = () => {
+    setIsAdding(false);
+    setIsEditing(false);
+    setEditingId(null);
+    setFormData({});
+  };
 
   return (
     <div className="space-y-6">
@@ -72,13 +122,14 @@ export const RestaurantManagement: React.FC<RestaurantManagementProps> = ({
                 <TableHead>Tên quán ăn</TableHead>
                 <TableHead>POI liên kết</TableHead>
                 <TableHead>Ẩm thực</TableHead>
+                <TableHead>Trạng thái</TableHead>
                 <TableHead className="text-right">Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredRestaurants.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8 text-slate-500">
+                  <TableCell colSpan={5} className="text-center py-8 text-slate-500">
                     Không tìm thấy quán ăn nào
                   </TableCell>
                 </TableRow>
@@ -98,9 +149,24 @@ export const RestaurantManagement: React.FC<RestaurantManagementProps> = ({
                       </div>
                     </TableCell>
                     <TableCell>{res.cuisine || 'Chưa cập nhật'}</TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        res.status === 'approved' ? 'bg-green-100 text-green-700' :
+                        res.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-red-100 text-red-700'
+                      }`}>
+                        {res.status === 'approved' ? 'Đã duyệt' :
+                         res.status === 'pending' ? 'Chờ duyệt' : 'Từ chối'}
+                      </span>
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => openEditDialog(res)}
+                        >
                           <Edit2 className="w-4 h-4" />
                         </Button>
                         <Button 
@@ -121,7 +187,8 @@ export const RestaurantManagement: React.FC<RestaurantManagementProps> = ({
         </CardContent>
       </Card>
 
-      <Dialog open={isAdding} onOpenChange={setIsAdding}>
+      {/* Add Dialog */}
+      <Dialog open={isAdding} onOpenChange={closeDialog}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>Thêm quán ăn mới</DialogTitle>
@@ -133,15 +200,15 @@ export const RestaurantManagement: React.FC<RestaurantManagementProps> = ({
                 <Input 
                   id="res-name" 
                   placeholder="Nhập tên quán..." 
-                  value={newRestaurant.name || ''}
-                  onChange={(e) => setNewRestaurant({ ...newRestaurant, name: e.target.value })}
+                  value={formData.name || ''}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="res-poi">POI liên kết</Label>
                 <Select 
-                  value={newRestaurant.poiId} 
-                  onValueChange={(val) => setNewRestaurant({ ...newRestaurant, poiId: val })}
+                  value={formData.poiId} 
+                  onValueChange={(val) => setFormData({ ...formData, poiId: val })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Chọn POI" />
@@ -160,8 +227,8 @@ export const RestaurantManagement: React.FC<RestaurantManagementProps> = ({
                 <Input 
                   id="res-cuisine" 
                   placeholder="VD: Đặc sản Ninh Bình" 
-                  value={newRestaurant.cuisine || ''}
-                  onChange={(e) => setNewRestaurant({ ...newRestaurant, cuisine: e.target.value })}
+                  value={formData.cuisine || ''}
+                  onChange={(e) => setFormData({ ...formData, cuisine: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
@@ -169,8 +236,8 @@ export const RestaurantManagement: React.FC<RestaurantManagementProps> = ({
                 <Input 
                   id="res-hours" 
                   placeholder="VD: 08:00 - 22:00" 
-                  value={newRestaurant.openingHours || ''}
-                  onChange={(e) => setNewRestaurant({ ...newRestaurant, openingHours: e.target.value })}
+                  value={formData.openingHours || ''}
+                  onChange={(e) => setFormData({ ...formData, openingHours: e.target.value })}
                 />
               </div>
             </div>
@@ -180,8 +247,8 @@ export const RestaurantManagement: React.FC<RestaurantManagementProps> = ({
                 id="res-desc" 
                 placeholder="Nhập mô tả chi tiết để sinh thuyết minh..." 
                 className="min-h-[120px]"
-                value={newRestaurant.description || ''}
-                onChange={(e) => setNewRestaurant({ ...newRestaurant, description: e.target.value })}
+                value={formData.description || ''}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               />
               <p className="text-[10px] text-slate-400 italic">
                 * Nội dung này sẽ được dùng làm dữ liệu gốc để dịch và sinh file âm thanh.
@@ -189,8 +256,62 @@ export const RestaurantManagement: React.FC<RestaurantManagementProps> = ({
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAdding(false)}>Hủy</Button>
+            <Button variant="outline" onClick={closeDialog}>Hủy</Button>
             <Button onClick={handleSave}>Lưu quán ăn</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditing} onOpenChange={closeDialog}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Chỉnh sửa quán ăn</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Tên quán ăn</Label>
+              <Input 
+                id="edit-name" 
+                placeholder="Nhập tên quán..." 
+                value={formData.name || ''}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-cuisine">Loại ẩm thực</Label>
+                <Input 
+                  id="edit-cuisine" 
+                  placeholder="VD: Đặc sản Ninh Bình" 
+                  value={formData.cuisine || ''}
+                  onChange={(e) => setFormData({ ...formData, cuisine: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-hours">Giờ mở cửa</Label>
+                <Input 
+                  id="edit-hours" 
+                  placeholder="VD: 08:00 - 22:00" 
+                  value={formData.openingHours || ''}
+                  onChange={(e) => setFormData({ ...formData, openingHours: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-desc">Mô tả quán ăn</Label>
+              <Textarea 
+                id="edit-desc" 
+                placeholder="Nhập mô tả chi tiết..." 
+                className="min-h-[120px]"
+                value={formData.description || ''}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeDialog}>Hủy</Button>
+            <Button onClick={handleUpdate}>Cập nhật</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

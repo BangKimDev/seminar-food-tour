@@ -52,6 +52,7 @@ export default function App() {
     restaurants,
     isLoading: restaurantsLoading,
     addRestaurant,
+    updateRestaurant,
     deleteRestaurant,
     deleteByPoiId,          // cascade khi xóa POI
   } = useRestaurants();
@@ -109,6 +110,14 @@ export default function App() {
       await addRestaurant(payload);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Lỗi thêm quán ăn');
+    }
+  };
+
+  const handleUpdateRestaurant = async (id: string, payload: Parameters<typeof updateRestaurant>[1]) => {
+    try {
+      await updateRestaurant(id, payload);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Lỗi cập nhật quán ăn');
     }
   };
 
@@ -175,6 +184,7 @@ export default function App() {
           restaurants={restaurants}
           pois={pois}
           onAdd={handleAddRestaurant}
+          onUpdate={handleUpdateRestaurant}
           onDelete={handleDeleteRestaurant}
         />
       )}

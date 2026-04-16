@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { POI, POICategory } from '@/src/types';
-import { MapPicker } from '@/src/components/MapPicker';
+import { POI, POICategory } from '../types';
+import { MapPicker } from '../components/MapPicker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -53,10 +53,13 @@ const categoryConfig: Record<
   { label: string; color: string; bgColor: string; dotColor: string }
 > = {
   main: { label: 'Điểm chính', color: 'text-blue-700', bgColor: 'bg-blue-100', dotColor: 'bg-blue-500' },
+  restaurant: { label: 'Nhà hàng', color: 'text-orange-700', bgColor: 'bg-orange-100', dotColor: 'bg-orange-500' },
+  cafe: { label: 'Quán cà phê', color: 'text-amber-700', bgColor: 'bg-amber-100', dotColor: 'bg-amber-500' },
+  market: { label: 'Chợ', color: 'text-yellow-700', bgColor: 'bg-yellow-100', dotColor: 'bg-yellow-500' },
   wc: { label: 'WC', color: 'text-green-700', bgColor: 'bg-green-100', dotColor: 'bg-green-500' },
-  ticket: { label: 'Bán vé', color: 'text-orange-700', bgColor: 'bg-orange-100', dotColor: 'bg-orange-500' },
+  ticket: { label: 'Bán vé', color: 'text-pink-700', bgColor: 'bg-pink-100', dotColor: 'bg-pink-500' },
   parking: { label: 'Gửi xe', color: 'text-purple-700', bgColor: 'bg-purple-100', dotColor: 'bg-purple-500' },
-  boat: { label: 'Bến thuyền', color: 'text-red-700', bgColor: 'bg-red-100', dotColor: 'bg-red-500' },
+  boat: { label: 'Bến thuyền', color: 'text-cyan-700', bgColor: 'bg-cyan-100', dotColor: 'bg-cyan-500' },
 };
 
 export const POIManagement: React.FC<POIManagementProps> = ({ pois, onAdd, onUpdate, onDelete }) => {

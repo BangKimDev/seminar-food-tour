@@ -11,7 +11,11 @@ import { AuthUser } from '../types';
  * để tiện phát triển POC mà không cần backend.
  */
 
-const USE_MOCK = !(import.meta.env.VITE_API_URL as string);
+const USE_MOCK = !import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URL === '';
+
+// Debug
+console.log('[Auth] VITE_API_URL:', import.meta.env.VITE_API_URL);
+console.log('[Auth] USE_MOCK:', USE_MOCK);
 
 const TOKEN_KEY = 'auth_token';
 const USER_KEY  = 'auth_user';
@@ -37,7 +41,7 @@ export const authService = {
       };
     }
 
-    return apiClient.post<{ token: string; user: AuthUser }>('/auth/login', { username, password });
+    return apiClient.post<{ token: string; user: AuthUser }>('/auth/admin/login', { username, password });
   },
 
   async logout(): Promise<void> {
