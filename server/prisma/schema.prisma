@@ -1,0 +1,146 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Admin Users ───────────────────────────────────────────────────────────────
+
+enum AdminRole {
+  super_admin
+  admin
+  content_editor
+}
+
+model Admin {
+  id           String    @id @default(uuid())
+  username     String    @unique
+  email        String    @unique
+  passwordHash String
+  displayName  String
+  role         AdminRole @default(content_editor)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+// ─── Restaurant Owners ────────────────────────────────────────────────────────
+
+enum OwnerStatus {
+  pending
+  approved
+  rejected
+}
+
+model RestaurantOwner {
+  id           String       @id @default(uuid())
+  email        String       @unique
+  passwordHash String
+  name         String
+  status       OwnerStatus  @default(pending)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  restaurants  Restaurant[]
+}
+
+// ─── POIs (Points of Interest) ────────────────────────────────────────────────
+
+enum POICategory {
+  main
+  wc
+  ticket
+  parking
+  boat
+  restaurant
+  cafe
+  market
+}
+
+model POI {
+  id          String      @id @default(uuid())
+  name        String
+  category    POICategory @default(main)
+  lat         Float
+  lng         Float
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  restaurants Restaurant[]
+}
+
+// ─── Restaurants ──────────────────────────────────────────────────────────────
+
+enum RestaurantStatus {
+  pending
+  approved
+  rejected
+}
+
+model Restaurant {
+  id           String            @id @default(uuid())
+  poiId        String?
+  name         String
+  description  String
+  cuisine      String?
+  openingHours String?
+  status       RestaurantStatus  @default(pending)
+  imageUrl     String?
+  views        Int               @default(0)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  poi          POI?              @relation(fields: [poiId], references: [id], onDelete: SetNull)
+  ownerId      String?
+  owner        RestaurantOwner?  @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+
+  menuItems    MenuItem[]
+  audioGuides  AudioGuide[]
+}
+
+// ─── Menu Items ───────────────────────────────────────────────────────────────
+
+model MenuItem {
+  id            String     @id @default(uuid())
+  restaurantId  String
+  dishName      String
+  price         Float
+  category      String?
+  imageUrl      String?
+  isAvailable   Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+}
+
+// ─── Audio Guides ─────────────────────────────────────────────────────────────
+
+model AudioGuide {
+  id           String   @id @default(uuid())
+  restaurantId String
+  language     String   // vi, en, zh, ja, ko, fr, es
+  content      String
+  audioUrl     String?  // Cloud storage URL
+  duration     Int?     // Duration in seconds
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@unique([restaurantId, language])
+}
+
+// ─── Visit Tracking (for analytics) ─────────────────────────────────────────
+
+model Visit {
+  id           String   @id @default(uuid())
+  restaurantId String?
+  visitorId    String?  // Anonymous visitor ID
+  poiId        String?
+  action       String   // view, audio_play, navigation
+  metadata     Json?
+  createdAt    DateTime @default(now())
+}
