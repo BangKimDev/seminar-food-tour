@@ -13,7 +13,7 @@ import { AudioGuide, ApiResponse } from '../types';
  * Với backend thực, cần upload file riêng và lưu URL cloud storage.
  */
 
-const USE_MOCK = !import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URL === '';
+const USE_MOCK = false;
 
 const delay = <T>(data: T, ms = 300): Promise<T> =>
   new Promise(r => setTimeout(() => r(data), ms));

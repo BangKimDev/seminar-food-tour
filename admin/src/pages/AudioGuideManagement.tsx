@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Restaurant, AudioGuide } from '../types';
 import { translateContent, generateTTS } from '../lib/gemini';
 import { uploadService } from '../services/uploadService';
+import { useAudioGuides } from '../hooks/useAudioGuides';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -30,11 +31,12 @@ const LANGUAGE_MAP: Record<string, { code: string; displayName: string }> = {
 
 export const AudioGuideManagement: React.FC<AudioGuideManagementProps> = ({ 
   restaurants, 
-  audioGuides, 
-  onAdd, 
-  onDelete 
+  audioGuides: _ignoredData, 
+  onAdd: _ignoredAdd, 
+  onDelete: _ignoredDelete 
 }) => {
   const [selectedResId, setSelectedResId] = useState<string>('');
+  const { audioGuides: existingGuides, addAudioGuide: onAdd, deleteAudioGuide: onDelete } = useAudioGuides(selectedResId);
   const [targetLang, setTargetLang] = useState<string>('en');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -45,7 +47,6 @@ export const AudioGuideManagement: React.FC<AudioGuideManagementProps> = ({
   const languages = Object.values(LANGUAGE_MAP);
 
   const selectedRes = restaurants.find(r => r.id === selectedResId);
-  const existingGuides = audioGuides.filter(g => g.restaurantId === selectedResId);
 
   const getDisplayName = (code: string) => LANGUAGE_MAP[code]?.displayName || code;
 

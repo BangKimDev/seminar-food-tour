@@ -14,7 +14,7 @@ import { POI, ApiResponse } from '../types';
  * Mock store tồn tại trong memory — bị reset khi reload page (hành vi OK cho POC).
  */
 
-const USE_MOCK = !import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URL === '';
+const USE_MOCK = false;
 
 const delay = <T>(data: T, ms = 350): Promise<T> =>
   new Promise(r => setTimeout(() => r(data), ms));

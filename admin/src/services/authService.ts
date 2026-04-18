@@ -11,7 +11,7 @@ import { AuthUser } from '../types';
  * để tiện phát triển POC mà không cần backend.
  */
 
-const USE_MOCK = !import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URL === '';
+const USE_MOCK = false;
 
 // Debug
 console.log('[Auth] VITE_API_URL:', import.meta.env.VITE_API_URL);

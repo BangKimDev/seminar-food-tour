@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Map as MapIcon, 
   List, 
@@ -25,6 +25,7 @@ import { POI, Location, TabType } from './types/index.ts';
 import { MOCK_POIS } from './data/mockData.ts';
 import { calculateDistance } from './utils/geoUtils.ts';
 import { useLocationTracking } from './hooks/useLocation.ts';
+import { restaurantService } from './services/restaurantService.ts';
 import { AudioPlayer } from './components/AudioPlayer.tsx';
 
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
@@ -94,6 +95,28 @@ export default function App() {
   const [isTracking, setIsTracking] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [pois, setPois] = useState<POI[]>([]);
+
+  useEffect(() => {
+    restaurantService.getAll().then(data => {
+      const mapped: POI[] = data.map(r => ({
+        id: r.id,
+        name: r.name,
+        specialty: r.cuisine || r.description || 'Đặc sản địa phương',
+        hours: r.openingHours || '08:00 - 22:00',
+        rating: 4.5,
+        lat: r.poi?.lat || 21.032,
+        lng: r.poi?.lng || 105.849,
+        audioUrl: (r.audioGuides && r.audioGuides.length > 0 && r.audioGuides[0].audioUrl) 
+                  ? r.audioGuides[0].audioUrl 
+                  : 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+        description: r.description,
+        image: r.imageUrl || MOCK_POIS[0].image,
+        audioGuides: r.audioGuides?.filter(g => !!g.audioUrl).map(g => ({ language: g.language, audioUrl: g.audioUrl! })) || []
+      }));
+      setPois(mapped);
+    }).catch(console.error);
+  }, []);
 
   const toggleFavorite = (poiId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -104,15 +127,15 @@ export default function App() {
     setFavorites(prev => prev.includes(poiId) ? prev.filter(id => id !== poiId) : [...prev, poiId]);
   };
 
-  const { userLocation, setUserLocation, activeGeofencePoi, notifications } = useLocationTracking(isTracking);
+  const { userLocation, setUserLocation, activeGeofencePoi, notifications } = useLocationTracking(isTracking, pois);
 
   const sortedPois = useMemo(() => {
-    return [...MOCK_POIS].sort((a, b) => {
+    return [...pois].sort((a, b) => {
       const distA = calculateDistance(userLocation.lat, userLocation.lng, a.lat, a.lng);
       const distB = calculateDistance(userLocation.lat, userLocation.lng, b.lat, b.lng);
       return distA - distB;
     });
-  }, [userLocation]);
+  }, [userLocation, pois]);
 
   return (
     <div className="flex flex-col h-screen bg-zinc-50 font-sans text-zinc-900 max-w-md mx-auto border-x border-zinc-200 overflow-hidden">
@@ -134,7 +157,7 @@ export default function App() {
                 />
                 <MapUpdater center={{ lat: userLocation.lat, lng: userLocation.lng }} />
                 
-                {MOCK_POIS.map(poi => (
+                {pois.map(poi => (
                   <Marker 
                     key={poi.id} 
                     position={[poi.lat, poi.lng]} 
@@ -254,7 +277,7 @@ export default function App() {
                       <p className="text-sm text-zinc-400 italic">Bạn chưa lưu quán ăn nào.</p>
                     ) : (
                       favorites.map(favId => {
-                        const favPoi = MOCK_POIS.find(p => p.id === favId);
+                        const favPoi = pois.find(p => p.id === favId);
                         if(!favPoi) return null;
                         return (
                           <div key={favId} onClick={() => { setSelectedPoi(favPoi); setActiveTab('map'); }} className="flex items-center gap-3 p-3 bg-white border border-rose-100 shadow-sm rounded-xl cursor-pointer active:scale-95 transition-transform">
