@@ -13,7 +13,7 @@ interface AudioPlayerProps {
     onEnded?: () => void;
 }
 
-const LANGUAGES = [
+const GLOBAL_LANGUAGES = [
   { code: 'vi', label: '🇻🇳 Tiếng Việt' },
   { code: 'en', label: '🇬🇧 English' },
   { code: 'ja', label: '🇯🇵 日本語' },
@@ -26,11 +26,23 @@ const LANGUAGES = [
 export const AudioPlayer: React.FC<AudioPlayerProps> = ({ poi, onEnded }) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
-    const [lang, setLang] = useState('vi');
+    // Lấy danh sách audio khả dụng hoặc dùng fallback
+    const audioSources = (poi.audioGuides && poi.audioGuides.length > 0) 
+        ? poi.audioGuides 
+        : [{ language: 'vi', audioUrl: poi.audioUrl }];
+
+    // Khởi tạo language ban đầu là cái đầu tiên có sẵn
+    const [lang, setLang] = useState(audioSources[0]?.language || 'vi');
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
-    // Mock changing audio file when language changes
-    const currentAudioUrl = `${poi.audioUrl}?lang=${lang}`;
+    // Khi đổi POI, reset lại ngôn ngữ về bản ghi đầu tiên
+    useEffect(() => {
+        setLang(audioSources[0]?.language || 'vi');
+    }, [poi.id]);
+
+    const currentAudioUrl = audioSources.find(a => a.language === lang)?.audioUrl || audioSources[0]?.audioUrl || '';
+    const availableCodes = audioSources.map(a => a.language);
+    const availableDropdown = GLOBAL_LANGUAGES.filter(l => availableCodes.includes(l.code));
 
     useEffect(() => {
         if (isPlaying) audioRef.current?.play();
@@ -79,11 +91,14 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ poi, onEnded }) => {
                         onChange={handleLangChange} 
                         className="bg-transparent text-sm font-semibold text-zinc-200 outline-none cursor-pointer appearance-none pr-4"
                     >
-                        {LANGUAGES.map(l => (
+                        {availableDropdown.map(l => (
                             <option key={l.code} value={l.code} className="bg-zinc-800 text-white">
                                 {l.label}
                             </option>
                         ))}
+                        {availableDropdown.length === 0 && (
+                            <option value="vi" className="bg-zinc-800 text-white">Chưa có bản dịch</option>
+                        )}
                     </select>
                 </div>
             </div>

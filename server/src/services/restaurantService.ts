@@ -61,6 +61,14 @@ export const restaurantService = {
             email: true,
           },
         },
+        audioGuides: {
+          select: {
+            id: true,
+            language: true,
+            audioUrl: true,
+            duration: true,
+          },
+        },
         _count: {
           select: {
             menuItems: true,
@@ -166,6 +174,14 @@ export const restaurantService = {
       where: { status: 'approved' },
       include: {
         poi: true,
+        audioGuides: {
+          select: {
+            id: true,
+            language: true,
+            audioUrl: true,
+            duration: true,
+          },
+        },
         _count: {
           select: {
             audioGuides: true,

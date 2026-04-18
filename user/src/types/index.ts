@@ -14,6 +14,10 @@ export interface POI {
     audioUrl: string;
     description: string;
     image: string;
+    audioGuides?: {
+        language: string;
+        audioUrl: string;
+    }[];
 }
 
 export interface Location {

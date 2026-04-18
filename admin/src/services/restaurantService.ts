@@ -11,7 +11,7 @@ import { Restaurant, ApiResponse } from '../types';
  *   DELETE /restaurants/:id             → 204 (cascade xóa audio_guides)
  */
 
-const USE_MOCK = !import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URL === '';
+const USE_MOCK = false;
 
 const delay = <T>(data: T, ms = 350): Promise<T> =>
   new Promise(r => setTimeout(() => r(data), ms));
