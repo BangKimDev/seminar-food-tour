@@ -57,7 +57,7 @@ export interface AudioGuide {
   updatedAt?: string;
 }
 
-export type AppState = 'login' | 'dashboard' | 'pois' | 'restaurants' | 'audio';
+export type AppState = 'login' | 'dashboard' | 'pois' | 'restaurants' | 'audio' | 'qr';
 
 // ─── Auth & API types ────────────────────────────────────────────────────────
 

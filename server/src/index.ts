@@ -7,8 +7,13 @@ import prisma from './config/database.js';
 
 const app = express();
 
+const corsOrigins = [
+  ...config.frontendUrl.split(',').filter(Boolean),
+  ...config.ngrokUrls.split(',').filter(Boolean),
+];
+
 app.use(cors({
-  origin: config.frontendUrl.split(','),
+  origin: corsOrigins,
   credentials: true,
 }));
 

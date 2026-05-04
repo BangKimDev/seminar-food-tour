@@ -7,7 +7,8 @@ import {
   Mic2, 
   LogOut,
   ChevronRight,
-  User
+  User,
+  QrCode
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AppState, AuthUser } from '@/src/types';
@@ -39,6 +40,7 @@ export const Layout: React.FC<LayoutProps> = ({
     { id: 'pois', label: 'Quản lý POIs', icon: MapIcon },
     { id: 'restaurants', label: 'Quản lý quán ăn', icon: Utensils },
     { id: 'audio', label: 'Quản lý thuyết minh', icon: Mic2 },
+    { id: 'qr', label: 'QR Code', icon: QrCode },
   ];
 
   return (

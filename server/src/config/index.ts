@@ -6,6 +6,7 @@ export const config = {
   port: parseInt(process.env.PORT || '4000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173,http://localhost:5174,http://localhost:5175',
+  ngrokUrls: process.env.NGROK_URLS || '',
   
   jwt: {
     secret: process.env.JWT_SECRET || 'fallback-secret-change-in-production',

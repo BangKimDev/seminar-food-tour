@@ -17,6 +17,7 @@ import { POIManagement }        from './pages/POIManagement';
 import { RestaurantManagement } from './pages/RestaurantManagement';
 import { AudioGuideManagement } from './pages/AudioGuideManagement';
 import { MyRestaurant }         from './pages/MyRestaurant';
+import { QRCodeManagement }     from './pages/QRCodeManagement';
 import { AppState }             from './types';
 import { Toaster }              from '@/components/ui/sonner';
 import { toast }                from 'sonner';
@@ -196,6 +197,10 @@ export default function App() {
           onAdd={handleAddAudioGuide}
           onDelete={handleDeleteAudioGuide}
         />
+      )}
+
+      {activeTab === 'qr' && user?.role !== 'restaurant_owner' && (
+        <QRCodeManagement />
       )}
 
       <Toaster />
