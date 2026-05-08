@@ -14,8 +14,11 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   const res = await fetch(`${BASE_URL}${API_PREFIX}${endpoint}`, { ...options, headers });
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ message: `HTTP ${res.status}` }));
-    throw new Error(err.message || `HTTP ${res.status}`);
+    const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    const msg = err.details
+      ? err.details.map((d: any) => `${d.field}: ${d.message}`).join('; ')
+      : err.error;
+    throw new Error(msg || `HTTP ${res.status}`);
   }
 
   if (res.status === 204) return undefined as T;

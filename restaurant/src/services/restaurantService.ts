@@ -5,6 +5,7 @@ export interface RestaurantData {
   name: string;
   description: string;
   cuisine?: string;
+  address?: string | null;
   openingHours?: string;
   imageUrl?: string;
   status: 'pending' | 'approved' | 'rejected';
@@ -22,15 +23,25 @@ export interface MenuItemData {
   restaurantId: string;
   dishName: string;
   price: number;
+  description?: string;
   category?: string;
   imageUrl?: string;
   isAvailable: boolean;
 }
 
 export const restaurantService = {
-  async getMyRestaurant(): Promise<RestaurantData | null> {
+  async getById(id: string): Promise<RestaurantData | null> {
     try {
-      const restaurants = await apiClient.get<RestaurantData[]>('/restaurants');
+      return await apiClient.get<RestaurantData>(`/restaurants/${id}`);
+    } catch {
+      return null;
+    }
+  },
+
+  async getMyRestaurant(ownerId?: string): Promise<RestaurantData | null> {
+    try {
+      const query = ownerId ? `?ownerId=${ownerId}` : '';
+      const restaurants = await apiClient.get<RestaurantData[]>(`/restaurants${query}`);
       return restaurants[0] || null;
     } catch {
       return null;

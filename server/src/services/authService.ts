@@ -96,16 +96,22 @@ export const adminService = {
 };
 
 export const ownerService = {
-  async register(email: string, password: string, name: string) {
-    const existing = await prisma.restaurantOwner.findUnique({ where: { email } });
-    if (existing) {
+  async register(email: string, password: string, name: string, username: string, address?: string) {
+    const existingByEmail = await prisma.restaurantOwner.findUnique({ where: { email } });
+    if (existingByEmail) {
       throw new Error('Email already registered');
+    }
+
+    const existingByUsername = await prisma.restaurantOwner.findUnique({ where: { username } });
+    if (existingByUsername) {
+      throw new Error('Username already taken');
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
     
     const owner = await prisma.restaurantOwner.create({
       data: {
+        username,
         email,
         passwordHash,
         name,
@@ -113,32 +119,49 @@ export const ownerService = {
       },
     });
 
+    const restaurant = await prisma.restaurant.create({
+      data: {
+        name,
+        description: '',
+        address,
+        ownerId: owner.id,
+        status: 'approved',
+      },
+    });
+
     return {
       id: owner.id,
+      username: owner.username,
       email: owner.email,
       name: owner.name,
+      restaurantId: restaurant.id,
       status: owner.status,
+      createdAt: owner.createdAt.toISOString(),
     };
   },
 
-  async login(email: string, password: string) {
-    const owner = await prisma.restaurantOwner.findUnique({ where: { email } });
+  async login(identifier: string, password: string) {
+    const isEmail = identifier.includes('@');
+    const owner = await prisma.restaurantOwner.findUnique({
+      where: isEmail ? { email: identifier } : { username: identifier },
+      include: { restaurants: { take: 1 } },
+    });
     
     if (!owner) {
-      throw new Error('Invalid credentials');
+      throw new Error('Email/tài khoản hoặc mật khẩu không đúng');
     }
 
     if (owner.status === 'rejected') {
-      throw new Error('Account has been rejected');
+      throw new Error('Tài khoản đã bị từ chối');
     }
 
     if (owner.status === 'pending') {
-      throw new Error('Account is pending approval');
+      throw new Error('Tài khoản đang chờ phê duyệt');
     }
 
     const isValid = await bcrypt.compare(password, owner.passwordHash);
     if (!isValid) {
-      throw new Error('Invalid credentials');
+      throw new Error('Email/tài khoản hoặc mật khẩu không đúng');
     }
 
     const token = jwt.sign(
@@ -155,9 +178,14 @@ export const ownerService = {
       token,
       user: {
         id: owner.id,
+        username: owner.username,
         email: owner.email,
+        passwordHash: owner.passwordHash,
         name: owner.name,
+        restaurantId: owner.restaurants[0]?.id,
+        address: owner.restaurants[0]?.address || null,
         status: owner.status,
+        createdAt: owner.createdAt.toISOString(),
       },
     };
   },
