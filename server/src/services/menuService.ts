@@ -5,13 +5,16 @@ export interface CreateMenuItemData {
   dishName: string;
   price: number;
   category?: string;
+  description?: string;
   imageUrl?: string;
+  isAvailable?: boolean;
 }
 
 export interface UpdateMenuItemData {
   dishName?: string;
   price?: number;
   category?: string;
+  description?: string;
   imageUrl?: string;
   isAvailable?: boolean;
 }
@@ -31,7 +34,9 @@ export const menuService = {
         dishName: data.dishName,
         price: data.price,
         category: data.category,
+        description: data.description,
         imageUrl: data.imageUrl,
+        isAvailable: data.isAvailable,
       },
     });
   },

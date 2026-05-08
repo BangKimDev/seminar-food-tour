@@ -22,8 +22,10 @@ const updateRestaurantSchema = createRestaurantSchema.partial().omit({ ownerId: 
 const createMenuItemSchema = z.object({
   dishName: z.string().min(1),
   price: z.number().min(0),
+  description: z.string().optional(),
   category: z.string().optional(),
-  imageUrl: z.string().url().optional(),
+  imageUrl: z.string().optional(),
+  isAvailable: z.boolean().optional(),
 });
 
 const updateMenuItemSchema = createMenuItemSchema.partial();
@@ -34,9 +36,9 @@ router.get('/stats', restaurantController.getStats);
 router.get('/nearby', restaurantController.getNearby);
 router.get('/:id', restaurantController.getById);
 
-// Admin routes
-router.post('/', authenticateAdmin, validate(createRestaurantSchema), restaurantController.create);
-router.put('/:id', authenticateAdmin, validate(updateRestaurantSchema), restaurantController.update);
+// Admin / Owner routes
+router.put('/:id', authenticateAny, validate(updateRestaurantSchema), restaurantController.update);
+router.patch('/:id', authenticateAny, validate(updateRestaurantSchema), restaurantController.update);
 router.delete('/:id', authenticateAdmin, restaurantController.delete);
 
 // Menu routes (nested under restaurants)
@@ -45,6 +47,7 @@ router.post('/:restaurantId/menu', authenticateOwner, validate(createMenuItemSch
 
 // Menu item routes
 router.put('/menu/:id', authenticateOwner, validate(updateMenuItemSchema), menuController.update);
+router.patch('/menu/:id', authenticateOwner, validate(updateMenuItemSchema), menuController.update);
 router.delete('/menu/:id', authenticateOwner, menuController.delete);
 
 // Tracking

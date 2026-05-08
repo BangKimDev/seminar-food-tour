@@ -16,6 +16,7 @@ export interface UpdateRestaurantData {
   name?: string;
   description?: string;
   cuisine?: string;
+  address?: string;
   openingHours?: string;
   status?: RestaurantStatus;
   imageUrl?: string;

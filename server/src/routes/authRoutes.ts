@@ -26,12 +26,14 @@ router.get('/admin', authenticateAdmin, adminAuthController.getAll);
 
 // Owner routes
 router.post('/owner/register', validate(z.object({
+  username: z.string().min(3).max(50),
   email: z.string().email(),
   password: z.string().min(6),
   name: z.string().min(1),
+  address: z.string().optional(),
 })), ownerAuthController.register);
 router.post('/owner/login', validate(z.object({
-  email: z.string().email(),
+  identifier: z.string().min(1),
   password: z.string().min(1),
 })), ownerAuthController.login);
 router.get('/owner/profile', authenticateOwner, ownerAuthController.getProfile);
