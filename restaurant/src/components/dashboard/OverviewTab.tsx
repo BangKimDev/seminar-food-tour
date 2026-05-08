@@ -1,17 +1,13 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React from 'react';
 import { motion } from 'motion/react';
-import { MenuItem } from '../../types';
+import { MenuItem, Restaurant } from '../../types';
 
 interface OverviewTabProps {
   menuItems: MenuItem[];
+  restaurant: Restaurant;
 }
 
-export const OverviewTab = ({ menuItems }: OverviewTabProps) => {
+export const OverviewTab = ({ menuItems, restaurant }: OverviewTabProps) => {
   return (
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
@@ -33,7 +29,7 @@ export const OverviewTab = ({ menuItems }: OverviewTabProps) => {
         </div>
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
           <p className="text-sm font-medium text-slate-500 mb-1">Lượt xem hôm nay</p>
-          <h3 className="text-3xl font-bold text-slate-900">128</h3>
+          <h3 className="text-3xl font-bold text-slate-900">{restaurant.views ?? 0}</h3>
         </div>
       </div>
 
@@ -57,3 +53,5 @@ export const OverviewTab = ({ menuItems }: OverviewTabProps) => {
     </motion.div>
   );
 };
+
+export default OverviewTab;

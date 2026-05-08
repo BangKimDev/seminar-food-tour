@@ -1,22 +1,21 @@
 import { apiClient } from './apiClient';
+import { SystemUser } from '../types';
 
 const TOKEN_KEY = 'owner_token';
 const USER_KEY  = 'owner_user';
 
-export interface OwnerUser {
-  id: string;
-  email: string;
-  name: string;
-  status: 'pending' | 'approved' | 'rejected';
+interface LoginResult {
+  token: string;
+  user: SystemUser;
 }
 
 export const authService = {
-  async login(email: string, password: string): Promise<{ token: string; user: OwnerUser }> {
-    return apiClient.post<{ token: string; user: OwnerUser }>('/auth/owner/login', { email, password });
+  async login(identifier: string, password: string): Promise<LoginResult> {
+    return apiClient.post<LoginResult>('/auth/owner/login', { identifier, password });
   },
 
-  async register(email: string, password: string, name: string): Promise<OwnerUser> {
-    return apiClient.post<OwnerUser>('/auth/owner/register', { email, password, name });
+  async register(email: string, password: string, name: string, username: string, address?: string): Promise<SystemUser> {
+    return apiClient.post<SystemUser>('/auth/owner/register', { username, email, password, name, address });
   },
 
   logout(): void {
@@ -24,15 +23,15 @@ export const authService = {
     localStorage.removeItem(USER_KEY);
   },
 
-  storeSession(token: string, user: OwnerUser): void {
+  storeSession(token: string, user: SystemUser): void {
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(USER_KEY, JSON.stringify(user));
   },
 
-  getStoredUser(): OwnerUser | null {
+  getStoredUser(): SystemUser | null {
     try {
       const raw = localStorage.getItem(USER_KEY);
-      return raw ? (JSON.parse(raw) as OwnerUser) : null;
+      return raw ? (JSON.parse(raw) as SystemUser) : null;
     } catch {
       return null;
     }
