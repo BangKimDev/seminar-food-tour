@@ -122,8 +122,8 @@ export default function App() {
         specialty: r.cuisine || r.description || 'Đặc sản địa phương',
         hours: r.openingHours || '08:00 - 22:00',
         rating: 4.5,
-        lat: r.poi?.lat || 21.032,
-        lng: r.poi?.lng || 105.849,
+        lat: r.poi?.lat || 10.7602,
+        lng: r.poi?.lng || 106.6815,
         audioUrl: (r.audioGuides && r.audioGuides.length > 0 && r.audioGuides[0].audioUrl) 
                   ? r.audioGuides[0].audioUrl 
                   : 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
