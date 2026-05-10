@@ -83,28 +83,57 @@ export interface ApiError {
 // ─── Dashboard types ────────────────────────────────────────────────────────
 
 export interface DashboardStats {
-  pois: number;
+  totalUsers: number;
+  usersThisWeek: number;
+  usersThisMonth: number;
+  totalVisits: number;
+  views: number;
+  audioPlays: number;
+  navigations: number;
   restaurants: number;
+  pois: number;
   audioGuides: number;
+  activeNow: number;
+}
+
+export interface DailyTrendItem {
+  date: string;
+  users: number;
   visits: number;
+  audioPlays: number;
+}
+
+export interface WeeklyTrendItem {
+  week: string;
+  users: number;
+  visits: number;
+}
+
+export interface PopularRestaurantItem {
+  id: string;
+  name: string;
+  views: number;
+  audioPlays: number;
+  navigations: number;
+}
+
+export interface VisitByHourItem {
+  hour: number;
+  count: number;
 }
 
 export interface DashboardData {
   stats: DashboardStats;
-  poiDistribution: { category: string; count: number }[];
+  dailyTrend: DailyTrendItem[];
+  weeklyTrend: WeeklyTrendItem[];
+  popularRestaurants: PopularRestaurantItem[];
+  visitsByHour: VisitByHourItem[];
+  languageDistribution: { language: string; count: number }[];
   restaurantByStatus: { status: string; count: number }[];
-  audioGuideByLanguage: { language: string; count: number }[];
   recentActivity: {
     id: string;
     action: string;
     restaurantName: string;
-    createdAt: string;
-  }[];
-  recentRestaurants: {
-    id: string;
-    name: string;
-    status: string;
-    views: number;
     createdAt: string;
   }[];
 }

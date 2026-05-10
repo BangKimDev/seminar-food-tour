@@ -41,15 +41,15 @@ async function main() {
   });
   console.log('Created admin: editor / editor123');
 
-  // Create POIs (Hanoi Old Quarter area)
+  // Create POIs (Ho Chi Minh City - District 1, around Saigon University)
   const pois = await Promise.all([
     prisma.pOI.create({
       data: {
         id: 'poi-001',
         name: 'Bún Chả Hàng Mành',
         category: 'restaurant',
-        lat: 21.0315,
-        lng: 105.8485,
+        lat: 10.7602,
+        lng: 106.6815,
       },
     }),
     prisma.pOI.create({
@@ -57,8 +57,8 @@ async function main() {
         id: 'poi-002',
         name: 'Phở Gia Truyền Bát Đàn',
         category: 'restaurant',
-        lat: 21.0330,
-        lng: 105.8470,
+        lat: 10.7715,
+        lng: 106.7040,
       },
     }),
     prisma.pOI.create({
@@ -66,8 +66,8 @@ async function main() {
         id: 'poi-003',
         name: 'Bánh Mì Hội An',
         category: 'restaurant',
-        lat: 21.0300,
-        lng: 105.8500,
+        lat: 10.7725,
+        lng: 106.6983,
       },
     }),
     prisma.pOI.create({
@@ -75,8 +75,8 @@ async function main() {
         id: 'poi-004',
         name: 'Chả Cá Lã Vọng',
         category: 'restaurant',
-        lat: 21.0320,
-        lng: 105.8495,
+        lat: 10.7700,
+        lng: 106.6890,
       },
     }),
     prisma.pOI.create({
@@ -84,8 +84,8 @@ async function main() {
         id: 'poi-005',
         name: 'Bún Bò Huế Hàm Long',
         category: 'restaurant',
-        lat: 21.0310,
-        lng: 105.8478,
+        lat: 10.7787,
+        lng: 106.6990,
       },
     }),
     prisma.pOI.create({
@@ -93,8 +93,8 @@ async function main() {
         id: 'poi-006',
         name: 'Xôi Xéo Giò Hà Nội',
         category: 'restaurant',
-        lat: 21.0335,
-        lng: 105.8488,
+        lat: 10.7670,
+        lng: 106.6950,
       },
     }),
     prisma.pOI.create({
@@ -102,8 +102,8 @@ async function main() {
         id: 'poi-007',
         name: 'Bếp Thái Siêu',
         category: 'restaurant',
-        lat: 21.0298,
-        lng: 105.8492,
+        lat: 10.7660,
+        lng: 106.6850,
       },
     }),
     prisma.pOI.create({
@@ -111,26 +111,26 @@ async function main() {
         id: 'poi-008',
         name: 'Cốm Mềm Hà Nội',
         category: 'restaurant',
-        lat: 21.0340,
-        lng: 105.8465,
+        lat: 10.7700,
+        lng: 106.6930,
       },
     }),
     prisma.pOI.create({
       data: {
         id: 'poi-wc-001',
-        name: 'Nhà vệ sinh công cộng Đồng Xuân',
+        name: 'Nhà vệ sinh gần ĐH Sài Gòn',
         category: 'wc',
-        lat: 21.0325,
-        lng: 105.8480,
+        lat: 10.7590,
+        lng: 106.6825,
       },
     }),
     prisma.pOI.create({
       data: {
         id: 'poi-wc-002',
-        name: 'Nhà vệ sinh công cộng Hàng Da',
+        name: 'Nhà vệ sinh gần Chợ Bến Thành',
         category: 'wc',
-        lat: 21.0305,
-        lng: 105.8505,
+        lat: 10.7735,
+        lng: 106.6970,
       },
     }),
   ]);

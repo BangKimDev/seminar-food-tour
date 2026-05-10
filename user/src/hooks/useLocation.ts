@@ -8,7 +8,7 @@ import { Location, POI } from '../types/index.ts';
 import { calculateDistance } from '../utils/geoUtils.ts';
 
 export function useLocationTracking(isTracking: boolean, pois: POI[] = []) {
-    const [userLocation, setUserLocation] = useState<Location>({ lat: 21.0320, lng: 105.8490 });
+    const [userLocation, setUserLocation] = useState<Location>({ lat: 10.7602, lng: 106.6815 });
     const [activeGeofencePoi, setActiveGeofencePoi] = useState<POI | null>(null);
     const [notifications, setNotifications] = useState<string[]>([]);
 
