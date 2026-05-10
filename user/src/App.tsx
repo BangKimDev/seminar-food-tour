@@ -16,7 +16,9 @@ import {
   Bell,
   Volume2,
   LocateFixed,
-  Heart
+  Heart,
+  QrCode,
+  Globe
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -27,6 +29,8 @@ import { calculateDistance } from './utils/geoUtils.ts';
 import { useLocationTracking } from './hooks/useLocation.ts';
 import { restaurantService } from './services/restaurantService.ts';
 import { AudioPlayer } from './components/AudioPlayer.tsx';
+import { QRScanner } from './components/QRScanner.tsx';
+import { LanguageSelectionModal } from './components/LanguageSelectionModal.tsx';
 
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -56,17 +60,22 @@ const MapUpdater = ({ center, zoom }: { center: { lat: number; lng: number }, zo
 
 // --- Sub-components ---
 
-const Header = ({ hasNotifications }: { hasNotifications: boolean }) => (
+const Header = ({ hasNotifications, onOpenQR }: { hasNotifications: boolean, onOpenQR: () => void }) => (
   <header className="px-6 py-4 bg-white border-b border-zinc-100 flex items-center justify-between z-10">
     <div>
       <h1 className="text-xl font-bold tracking-tight text-emerald-600">FoodieGuide</h1>
       <p className="text-[10px] uppercase tracking-widest font-semibold text-zinc-400">Street Food Audio Tour</p>
     </div>
-    <div className="relative">
-      <Bell size={20} className="text-zinc-400" />
-      {hasNotifications && (
-        <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
-      )}
+    <div className="flex items-center gap-4">
+      <button onClick={onOpenQR} className="p-2 bg-emerald-50 text-emerald-600 rounded-full active:scale-95 transition-transform shadow-sm border border-emerald-100">
+        <QrCode size={20} />
+      </button>
+      <div className="relative">
+        <Bell size={20} className="text-zinc-400" />
+        {hasNotifications && (
+          <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
+        )}
+      </div>
     </div>
   </header>
 );
@@ -96,6 +105,14 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [pois, setPois] = useState<POI[]>([]);
+  
+  const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
+  const [defaultLanguage, setDefaultLanguage] = useState<string | null>(localStorage.getItem('defaultLanguage'));
+  const [showLanguageModal, setShowLanguageModal] = useState(!localStorage.getItem('defaultLanguage'));
+
+  const handleLogin = () => {
+    setIsLoggedIn(true);
+  };
 
   useEffect(() => {
     restaurantService.getAll().then(data => {
@@ -138,8 +155,8 @@ export default function App() {
   }, [userLocation, pois]);
 
   return (
-    <div className="flex flex-col h-screen bg-zinc-50 font-sans text-zinc-900 max-w-md mx-auto border-x border-zinc-200 overflow-hidden">
-      <Header hasNotifications={notifications.length > 0} />
+    <div className="flex flex-col h-[100dvh] w-full md:max-w-md md:mx-auto bg-zinc-50 font-sans text-zinc-900 md:border-x border-zinc-200 overflow-hidden md:shadow-2xl md:my-4 md:h-[calc(100vh-2rem)] md:rounded-3xl relative">
+      <Header hasNotifications={notifications.length > 0} onOpenQR={() => setIsQRScannerOpen(true)} />
 
       <main className="flex-1 relative overflow-hidden">
         <AnimatePresence mode="wait">
@@ -227,9 +244,9 @@ export default function App() {
               <div className="bg-white rounded-2xl border border-zinc-100 p-4 shadow-sm">
                  <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-3">Tài khoản</h3>
                  {!isLoggedIn ? (
-                    <div className="space-y-3">
+                     <div className="space-y-3">
                        <p className="text-sm text-zinc-600">Đăng nhập để lưu lịch sử chuyến đi và đánh giá quán ăn.</p>
-                       <button onClick={() => setIsLoggedIn(true)} className="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl active:bg-emerald-700 transition-colors">
+                       <button onClick={handleLogin} className="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl active:bg-emerald-700 transition-colors">
                            Đăng nhập / Đăng ký
                        </button>
                     </div>
@@ -263,6 +280,23 @@ export default function App() {
                   </div>
                   <button onClick={() => setIsTracking(!isTracking)} className={`w-12 h-6 rounded-full transition-colors relative ${isTracking ? 'bg-emerald-500' : 'bg-zinc-200'}`}>
                     <motion.div className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-sm" animate={{ x: isTracking ? 24 : 0 }} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-zinc-100 p-4 space-y-4 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-blue-100 text-blue-600">
+                      <Globe size={20} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold">Ngôn ngữ mặc định</p>
+                      <p className="text-[10px] text-zinc-400">{defaultLanguage ? `Đang chọn: ${defaultLanguage.toUpperCase()}` : 'Chưa thiết lập'}</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setShowLanguageModal(true)} className="text-xs text-blue-600 font-semibold px-3 py-1.5 bg-blue-50 rounded-lg active:bg-blue-100">
+                    Thay đổi
                   </button>
                 </div>
               </div>
@@ -346,7 +380,7 @@ export default function App() {
                     <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-2">Giới thiệu</h3>
                     <p className="text-sm text-zinc-600 leading-relaxed">{selectedPoi.description}</p>
                   </div>
-                  <AudioPlayer poi={selectedPoi} />
+                  <AudioPlayer poi={selectedPoi} defaultLanguage={defaultLanguage || undefined} />
                   <div>
                     <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-3">Đánh giá nhanh</h3>
                     <div className="flex justify-between gap-2">
@@ -365,6 +399,33 @@ export default function App() {
       </main>
 
       <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
+
+      {/* Modals & Overlays */}
+      {isQRScannerOpen && (
+        <QRScanner 
+          onClose={() => setIsQRScannerOpen(false)}
+          onScanSuccess={(text) => {
+            setIsQRScannerOpen(false);
+            const foundPoi = pois.find(p => p.id === text);
+            if (foundPoi) {
+              setSelectedPoi(foundPoi);
+              setActiveTab('map');
+            } else {
+              alert(`Đã quét mã: ${text}\nKhông tìm thấy địa điểm trên hệ thống.`);
+            }
+          }}
+        />
+      )}
+
+      {showLanguageModal && (
+        <LanguageSelectionModal 
+          onSelect={(lang) => {
+            setDefaultLanguage(lang);
+            localStorage.setItem('defaultLanguage', lang);
+            setShowLanguageModal(false);
+          }}
+        />
+      )}
     </div>
   );
 }

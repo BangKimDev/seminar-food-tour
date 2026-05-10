@@ -42,6 +42,35 @@ async function main() {
   console.log('Created admin: editor / editor123');
 
   // Create POIs (Ho Chi Minh City - District 1, around Saigon University)
+  // Create demo restaurant owner
+  const ownerPassword = await bcrypt.hash('123456', 10);
+  const demoOwner = await prisma.restaurantOwner.create({
+    data: {
+      username: 'admin',
+      email: 'admin@foodstreet.vn',
+      passwordHash: ownerPassword,
+      name: 'Quán Ăn Mẫu FoodStreet',
+      status: 'approved',
+    },
+  });
+  console.log('Created owner: admin@foodstreet.vn / 123456');
+
+  // Create a restaurant for the demo owner
+  await prisma.restaurant.create({
+    data: {
+      ownerId: demoOwner.id,
+      name: 'Quán Ăn Mẫu FoodStreet',
+      description: 'Quán ăn mẫu dành cho chủ quản lý và thử nghiệm tính năng. Thực đơn đa dạng với các món ăn Việt Nam truyền thống.',
+      address: 'Địa chỉ mẫu FootStreet',
+      cuisine: 'Việt Nam',
+      openingHours: '08:00 - 22:00',
+      status: 'approved',
+      views: 0,
+    },
+  });
+  console.log('Created restaurant for demo owner');
+
+  // Create POIs (Hanoi Old Quarter area)
   const pois = await Promise.all([
     prisma.pOI.create({
       data: {

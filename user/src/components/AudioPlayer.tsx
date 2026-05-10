@@ -11,6 +11,7 @@ import { POI } from '../types/index.ts';
 interface AudioPlayerProps {
     poi: POI;
     onEnded?: () => void;
+    defaultLanguage?: string;
 }
 
 const GLOBAL_LANGUAGES = [
@@ -23,7 +24,7 @@ const GLOBAL_LANGUAGES = [
   { code: 'fr', label: '🇫🇷 Français' }
 ];
 
-export const AudioPlayer: React.FC<AudioPlayerProps> = ({ poi, onEnded }) => {
+export const AudioPlayer: React.FC<AudioPlayerProps> = ({ poi, onEnded, defaultLanguage }) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
     // Lấy danh sách audio khả dụng hoặc dùng fallback
@@ -31,14 +32,18 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ poi, onEnded }) => {
         ? poi.audioGuides 
         : [{ language: 'vi', audioUrl: poi.audioUrl }];
 
-    // Khởi tạo language ban đầu là cái đầu tiên có sẵn
-    const [lang, setLang] = useState(audioSources[0]?.language || 'vi');
+    // Khởi tạo language ban đầu
+    const [lang, setLang] = useState(() => {
+        const hasDefault = audioSources.find(a => a.language === defaultLanguage);
+        return hasDefault ? defaultLanguage! : (audioSources[0]?.language || 'vi');
+    });
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
-    // Khi đổi POI, reset lại ngôn ngữ về bản ghi đầu tiên
+    // Khi đổi POI, reset lại ngôn ngữ về bản ghi đầu tiên hoặc mặc định
     useEffect(() => {
-        setLang(audioSources[0]?.language || 'vi');
-    }, [poi.id]);
+        const hasDefault = audioSources.find(a => a.language === defaultLanguage);
+        setLang(hasDefault ? defaultLanguage! : (audioSources[0]?.language || 'vi'));
+    }, [poi.id, defaultLanguage]);
 
     const currentAudioUrl = audioSources.find(a => a.language === lang)?.audioUrl || audioSources[0]?.audioUrl || '';
     const availableCodes = audioSources.map(a => a.language);

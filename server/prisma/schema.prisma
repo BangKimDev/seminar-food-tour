@@ -36,6 +36,7 @@ enum OwnerStatus {
 
 model RestaurantOwner {
   id           String       @id @default(uuid())
+  username     String       @unique
   email        String       @unique
   passwordHash String
   name         String
@@ -85,6 +86,7 @@ model Restaurant {
   name         String
   description  String
   cuisine      String?
+  address      String?
   openingHours String?
   status       RestaurantStatus  @default(pending)
   imageUrl     String?
@@ -107,6 +109,7 @@ model MenuItem {
   restaurantId  String
   dishName      String
   price         Float
+  description   String?
   category      String?
   imageUrl      String?
   isAvailable   Boolean    @default(true)

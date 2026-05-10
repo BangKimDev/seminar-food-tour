@@ -35,8 +35,8 @@ export const adminAuthController = {
 export const ownerAuthController = {
   async register(req: Request, res: Response): Promise<void> {
     try {
-      const { email, password, name } = req.body;
-      const result = await ownerService.register(email, password, name);
+      const { username, email, password, name, address } = req.body;
+      const result = await ownerService.register(email, password, name, username, address);
       res.status(201).json(result);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -45,8 +45,8 @@ export const ownerAuthController = {
 
   async login(req: Request, res: Response): Promise<void> {
     try {
-      const { email, password } = req.body;
-      const result = await ownerService.login(email, password);
+      const { identifier, password } = req.body;
+      const result = await ownerService.login(identifier, password);
       res.json(result);
     } catch (error: any) {
       res.status(401).json({ error: error.message });

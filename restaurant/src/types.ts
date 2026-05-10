@@ -5,11 +5,28 @@
 
 export interface Restaurant {
   id: string;
-  name: string;
+  ownerId: string;
   ownerEmail: string;
-  status: 'pending' | 'approved' | 'rejected';
+  name: string;
   description: string;
   location: { lat: number; lng: number };
+  imageUrl?: string;
+  openingHours?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  views?: number;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface SystemUser {
+  id: string;
+  username: string;
+  email: string;
+  passwordHash: string;
+  name: string;
+  restaurantId?: string;
+  address?: string | null;
+  status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
 }
 
@@ -17,15 +34,13 @@ export interface MenuItem {
   id: string;
   restaurantId: string;
   dishName: string;
+  description?: string;
   price: number;
   category?: string;
   imageUrl?: string;
+  cropX?: number;
+  cropY?: number;
   isAvailable: boolean;
-}
-
-export interface SystemUser {
-  id: string;
-  email: string;
-  name: string;
-  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  updatedAt?: string;
 }

@@ -3,11 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { User as UserIcon } from 'lucide-react';
 import { AnimatePresence } from 'motion/react';
 import { Restaurant, MenuItem } from '../../types';
 import { INITIAL_MENU_ITEMS } from '../../constants';
+import { restaurantService, RestaurantData, MenuItemData } from '../../services/restaurantService';
 import { Sidebar } from './Sidebar';
 import { OverviewTab } from './OverviewTab';
 import { MenuTab } from './MenuTab';
@@ -17,24 +18,56 @@ import { MenuItemModal } from './MenuItemModal';
 interface DashboardProps {
   restaurant: Restaurant;
   onLogout: () => void;
+  onRestaurantUpdate: (data: RestaurantData) => void;
 }
 
-export const Dashboard = ({ restaurant, onLogout }: DashboardProps) => {
+export const Dashboard = ({ restaurant, onLogout, onRestaurantUpdate }: DashboardProps) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'menu' | 'settings'>('overview');
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Initialize menu items from localStorage or mock data
+  // Initialize menu items: DB first, fallback to localStorage
   useEffect(() => {
-    const savedItems = localStorage.getItem(`menu_items_${restaurant.id}`);
-    if (savedItems) {
-      setMenuItems(JSON.parse(savedItems));
-    } else {
-      setMenuItems(INITIAL_MENU_ITEMS);
-      localStorage.setItem(`menu_items_${restaurant.id}`, JSON.stringify(INITIAL_MENU_ITEMS));
-    }
+    (async () => {
+      try {
+        const dbItems = await restaurantService.getMenu(restaurant.id);
+        if (dbItems && dbItems.length > 0) {
+          const mapped: MenuItem[] = dbItems.map(item => ({
+            id: item.id,
+            restaurantId: item.restaurantId,
+            dishName: item.dishName,
+            price: item.price,
+            description: item.description,
+            category: item.category,
+            imageUrl: item.imageUrl,
+            isAvailable: item.isAvailable,
+            createdAt: new Date().toISOString(),
+          }));
+          localStorage.setItem(`menu_items_${restaurant.id}`, JSON.stringify(mapped));
+          setMenuItems(mapped);
+          return;
+        }
+      } catch {}
+
+      // Fallback to localStorage / mock
+      const savedItems = localStorage.getItem(`menu_items_${restaurant.id}`);
+      const savedUser = localStorage.getItem('foodstreet_user');
+      const isDemoAdmin = savedUser && (() => { try { return JSON.parse(savedUser).email === 'admin@foodstreet.vn'; } catch { return false; } })();
+
+      if (savedItems && isDemoAdmin) {
+        setMenuItems(JSON.parse(savedItems));
+      } else if (savedItems && !isDemoAdmin) {
+        localStorage.removeItem(`menu_items_${restaurant.id}`);
+        setMenuItems([]);
+      } else if (isDemoAdmin) {
+        setMenuItems(INITIAL_MENU_ITEMS);
+        localStorage.setItem(`menu_items_${restaurant.id}`, JSON.stringify(INITIAL_MENU_ITEMS));
+      } else {
+        setMenuItems([]);
+      }
+    })();
   }, [restaurant.id]);
 
   const saveToStorage = (items: MenuItem[]) => {
@@ -42,49 +75,137 @@ export const Dashboard = ({ restaurant, onLogout }: DashboardProps) => {
     setMenuItems(items);
   };
 
-  const handleSaveMenuItem = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSaveMenuItem = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSaving(true);
     const formData = new FormData(e.currentTarget);
-    
-    const itemData: MenuItem = {
-      id: editingItem ? editingItem.id : Math.random().toString(36).substr(2, 9),
-      restaurantId: restaurant.id,
+
+    const itemData = {
       dishName: formData.get('dishName') as string,
       price: Number(formData.get('price')),
-      category: formData.get('category') as string,
-      isAvailable: true,
-      imageUrl: `https://picsum.photos/seed/${formData.get('dishName')}/400/300`
+      category: (formData.get('category') as string) || undefined,
+      description: (formData.get('description') as string) || undefined,
+      imageUrl: (formData.get('imageUrl') as string) || undefined,
+      isAvailable: formData.get('isAvailable') === 'true',
     };
 
-    setTimeout(() => {
+    try {
+      let savedId = editingItem ? editingItem.id : '';
+      let savedRestaurantId = restaurant.id;
+
+      if (editingItem) {
+        const updated = await restaurantService.updateMenuItem(editingItem.id, itemData);
+        savedId = updated.id;
+        savedRestaurantId = updated.restaurantId;
+      } else {
+        const created = await restaurantService.createMenuItem(restaurant.id, itemData);
+        savedId = created.id;
+        savedRestaurantId = created.restaurantId;
+      }
+
+      const fullItem: MenuItem = {
+        id: savedId,
+        restaurantId: savedRestaurantId,
+        ...itemData,
+        cropX: Number(formData.get('cropX')) || 0,
+        cropY: Number(formData.get('cropY')) || 0,
+        createdAt: new Date().toISOString(),
+      };
+
       let newItems;
       if (editingItem) {
-        newItems = menuItems.map(item => item.id === editingItem.id ? itemData : item);
+        newItems = menuItems.map(item => item.id === editingItem.id ? fullItem : item);
       } else {
-        newItems = [...menuItems, itemData];
+        newItems = [fullItem, ...menuItems];
       }
       saveToStorage(newItems);
       setIsAddingItem(false);
       setEditingItem(null);
+    } catch (err) {
+      console.error('Failed to save menu item:', err);
+    } finally {
       setIsSaving(false);
-    }, 500);
+    }
   };
 
-  const handleDeleteItem = (id: string) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa món này?')) return;
+  const handleDeleteItem = async (id: string) => {
+    try {
+      await restaurantService.deleteMenuItem(id);
+    } catch (err) {
+      console.error('Failed to delete menu item:', err);
+    }
     const newItems = menuItems.filter(item => item.id !== id);
     saveToStorage(newItems);
   };
 
   const [settingsName, setSettingsName] = useState(restaurant.name);
   const [settingsDesc, setSettingsDesc] = useState(restaurant.description);
+  const [settingsImageUrl, setSettingsImageUrl] = useState(restaurant.imageUrl || '');
+  const [settingsLat, setSettingsLat] = useState(String(restaurant.location?.lat || ''));
+  const [settingsLng, setSettingsLng] = useState(String(restaurant.location?.lng || ''));
+  const [settingsOpeningHours, setSettingsOpeningHours] = useState(restaurant.openingHours || '');
+  const [settingsUsername, setSettingsUsername] = useState('');
+  const [settingsEmail, setSettingsEmail] = useState('');
+  const [settingsAddress, setSettingsAddress] = useState('');
   const [isSavingSettings, setIsSavingSettings] = useState(false);
 
-  const handleSaveSettings = () => {
+  useEffect(() => {
+    const savedUser = localStorage.getItem('foodstreet_user');
+    if (savedUser) {
+      try {
+        const user = JSON.parse(savedUser);
+        setSettingsUsername(user.username || '');
+        setSettingsEmail(user.email || '');
+        setSettingsAddress(user.address || '');
+      } catch {}
+    }
+    const savedOwner = localStorage.getItem('owner_user');
+    if (savedOwner) {
+      try {
+        const user = JSON.parse(savedOwner);
+        setSettingsUsername(user.username || settingsUsername);
+        setSettingsEmail(user.email || settingsEmail);
+        setSettingsAddress(user.address || settingsAddress);
+      } catch {}
+    }
+  }, []);
+
+  const handleSaveSettings = async () => {
     setIsSavingSettings(true);
+    try {
+      // Persist to API
+      const updated = await restaurantService.updateRestaurant(restaurant.id, {
+        name: settingsName,
+        description: settingsDesc,
+        imageUrl: settingsImageUrl || undefined,
+        openingHours: settingsOpeningHours || undefined,
+        address: settingsAddress || undefined,
+      });
+      onRestaurantUpdate(updated);
+
+      // Persist username/email/address to localStorage
+      try {
+        const raw = localStorage.getItem('foodstreet_user');
+        if (raw) {
+          const user = JSON.parse(raw);
+          user.username = settingsUsername;
+          user.email = settingsEmail;
+          user.address = settingsAddress;
+          localStorage.setItem('foodstreet_user', JSON.stringify(user));
+        }
+        const raw2 = localStorage.getItem('owner_user');
+        if (raw2) {
+          const user = JSON.parse(raw2);
+          user.username = settingsUsername;
+          user.email = settingsEmail;
+          user.address = settingsAddress;
+          localStorage.setItem('owner_user', JSON.stringify(user));
+        }
+      } catch {}
+    } catch (err: any) {
+      console.error('Failed to save settings:', err);
+    }
     setTimeout(() => {
-      alert('Cập nhật thành công! (Dữ liệu giao diện đã được thay đổi)');
       setIsSavingSettings(false);
     }, 800);
   };
@@ -111,15 +232,19 @@ export const Dashboard = ({ restaurant, onLogout }: DashboardProps) => {
               <p className="text-sm font-bold text-slate-900">{restaurant.name}</p>
               <p className="text-xs text-emerald-600 font-medium">Đang hoạt động</p>
             </div>
-            <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center border border-slate-200">
-              <UserIcon className="w-5 h-5 text-slate-500" />
+            <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-200 overflow-hidden bg-slate-100">
+              {restaurant.imageUrl ? (
+                <img src={restaurant.imageUrl} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <UserIcon className="w-5 h-5 text-slate-500" />
+              )}
             </div>
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-8">
+        <main className="flex-1 overflow-y-auto px-10 py-8">
           <AnimatePresence mode="wait">
-            {activeTab === 'overview' && <OverviewTab menuItems={menuItems} />}
+            {activeTab === 'overview' && <OverviewTab menuItems={menuItems} restaurant={restaurant} />}
             {activeTab === 'menu' && (
               <MenuTab 
                 menuItems={menuItems} 
@@ -129,11 +254,25 @@ export const Dashboard = ({ restaurant, onLogout }: DashboardProps) => {
               />
             )}
             {activeTab === 'settings' && (
-              <SettingsTab 
+              <SettingsTab
                 settingsName={settingsName}
                 setSettingsName={setSettingsName}
                 settingsDesc={settingsDesc}
                 setSettingsDesc={setSettingsDesc}
+                settingsImageUrl={settingsImageUrl}
+                setSettingsImageUrl={setSettingsImageUrl}
+                settingsLat={settingsLat}
+                setSettingsLat={setSettingsLat}
+                settingsLng={settingsLng}
+                setSettingsLng={setSettingsLng}
+                settingsOpeningHours={settingsOpeningHours}
+                setSettingsOpeningHours={setSettingsOpeningHours}
+                settingsUsername={settingsUsername}
+                setSettingsUsername={setSettingsUsername}
+                settingsEmail={settingsEmail}
+                setSettingsEmail={setSettingsEmail}
+                settingsAddress={settingsAddress}
+                setSettingsAddress={setSettingsAddress}
                 isSavingSettings={isSavingSettings}
                 handleSaveSettings={handleSaveSettings}
               />
