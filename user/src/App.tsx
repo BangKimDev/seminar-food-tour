@@ -4,13 +4,13 @@
  */
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { 
-  Map as MapIcon, 
-  List, 
-  Navigation, 
-  Star, 
-  Clock, 
-  Utensils, 
+import {
+  Map as MapIcon,
+  List,
+  Navigation,
+  Star,
+  Clock,
+  Utensils,
   ChevronRight,
   Settings,
   Bell,
@@ -18,7 +18,8 @@ import {
   LocateFixed,
   Heart,
   QrCode,
-  Globe
+  Globe,
+  Lock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -28,14 +29,14 @@ import { MOCK_POIS } from './data/mockData.ts';
 import { calculateDistance } from './utils/geoUtils.ts';
 import { useLocationTracking } from './hooks/useLocation.ts';
 import { useHeartbeat } from './hooks/useHeartbeat.ts';
-import { restaurantService } from './services/restaurantService.ts';
 import { AudioPlayer } from './components/AudioPlayer.tsx';
-import { QRScanner } from './components/QRScanner.tsx';
 import { LanguageSelectionModal } from './components/LanguageSelectionModal.tsx';
+import { poiService } from './services/poiService.ts';
 
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import { restaurantService } from './services/restaurantService.ts';
 
 const poiIcon = L.divIcon({
   html: `<div style="background-color: white; border-radius: 50%; padding: 4px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.2); display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; color: #10b981; border: 2px solid #10b981; font-size: 16px;">🍔</div>`,
@@ -61,22 +62,11 @@ const MapUpdater = ({ center, zoom }: { center: { lat: number; lng: number }, zo
 
 // --- Sub-components ---
 
-const Header = ({ hasNotifications, onOpenQR }: { hasNotifications: boolean, onOpenQR: () => void }) => (
+const Header = () => (
   <header className="px-6 py-4 bg-white border-b border-zinc-100 flex items-center justify-between z-10">
     <div>
       <h1 className="text-xl font-bold tracking-tight text-emerald-600">FoodieGuide</h1>
       <p className="text-[10px] uppercase tracking-widest font-semibold text-zinc-400">Street Food Audio Tour</p>
-    </div>
-    <div className="flex items-center gap-4">
-      <button onClick={onOpenQR} className="p-2 bg-emerald-50 text-emerald-600 rounded-full active:scale-95 transition-transform shadow-sm border border-emerald-100">
-        <QrCode size={20} />
-      </button>
-      <div className="relative">
-        <Bell size={20} className="text-zinc-400" />
-        {hasNotifications && (
-          <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
-        )}
-      </div>
     </div>
   </header>
 );
@@ -103,21 +93,43 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('map');
   const [selectedPoi, setSelectedPoi] = useState<POI | null>(null);
   const [isTracking, setIsTracking] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [favorites, setFavorites] = useState<string[]>([]);
   const [pois, setPois] = useState<POI[]>([]);
-  
-  const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
+  const [rawRestaurants, setRawRestaurants] = useState<any[]>([]);
+  const [rawPois, setRawPois] = useState<any[]>([]);
+
   const [defaultLanguage, setDefaultLanguage] = useState<string | null>(localStorage.getItem('defaultLanguage'));
   const [showLanguageModal, setShowLanguageModal] = useState(!localStorage.getItem('defaultLanguage'));
 
-  const handleLogin = () => {
-    setIsLoggedIn(true);
-  };
+  useEffect(() => {
+    Promise.all([
+      restaurantService.getAll(),
+      poiService.getAll()
+    ]).then(([restaurantData, poiData]) => {
+      setRawRestaurants(restaurantData);
+      setRawPois(poiData);
+    }).catch(console.error);
+  }, []);
 
   useEffect(() => {
-    restaurantService.getAll().then(data => {
-      const mapped: POI[] = data.map(r => ({
+    const rPois: POI[] = rawRestaurants.map(r => {
+      let selectedAudioUrl = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
+      const audioGuides = r.audioGuides || [];
+      if (audioGuides.length > 0) {
+        if (defaultLanguage) {
+          const match = audioGuides.find((g: any) => g.language === defaultLanguage && g.audioUrl);
+          if (match) {
+            selectedAudioUrl = match.audioUrl;
+          } else {
+            const firstWithUrl = audioGuides.find((g: any) => !!g.audioUrl);
+            if (firstWithUrl) selectedAudioUrl = firstWithUrl.audioUrl;
+          }
+        } else {
+          const firstWithUrl = audioGuides.find((g: any) => !!g.audioUrl);
+          if (firstWithUrl) selectedAudioUrl = firstWithUrl.audioUrl;
+        }
+      }
+
+      return {
         id: r.id,
         name: r.name,
         specialty: r.cuisine || r.description || 'Đặc sản địa phương',
@@ -125,25 +137,37 @@ export default function App() {
         rating: 4.5,
         lat: r.poi?.lat || 10.7602,
         lng: r.poi?.lng || 106.6815,
-        audioUrl: (r.audioGuides && r.audioGuides.length > 0 && r.audioGuides[0].audioUrl) 
-                  ? r.audioGuides[0].audioUrl 
-                  : 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+        audioUrl: selectedAudioUrl,
         description: r.description,
         image: r.imageUrl || MOCK_POIS[0].image,
-        audioGuides: r.audioGuides?.filter(g => !!g.audioUrl).map(g => ({ language: g.language, audioUrl: g.audioUrl! })) || []
-      }));
-      setPois(mapped);
-    }).catch(console.error);
-  }, []);
+        audioGuides: audioGuides.filter((g: any) => !!g.audioUrl).map((g: any) => ({ language: g.language, audioUrl: g.audioUrl }))
+      };
+    });
 
-  const toggleFavorite = (poiId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!isLoggedIn) {
-      alert("Vui lòng đăng nhập để lưu quán ăn yêu thích!");
-      return;
-    }
-    setFavorites(prev => prev.includes(poiId) ? prev.filter(id => id !== poiId) : [...prev, poiId]);
-  };
+    const pPois: POI[] = rawPois.map(p => {
+      let specialty = 'Tiện ích';
+      if (p.category === 'wc') specialty = 'Nhà vệ sinh';
+      else if (p.category === 'parking') specialty = 'Bãi đỗ xe';
+      else if (p.category === 'ticket') specialty = 'Quầy vé';
+      else if (p.category === 'main') specialty = 'Điểm chính';
+
+      return {
+        id: p.id,
+        name: p.name,
+        specialty,
+        hours: '24/7',
+        rating: 5.0,
+        lat: p.lat,
+        lng: p.lng,
+        audioUrl: '',
+        description: `Khu vực tiện ích: ${p.name}`,
+        image: MOCK_POIS[0].image, // Fallback
+        audioGuides: []
+      };
+    });
+
+    setPois([...rPois, ...pPois]);
+  }, [rawRestaurants, rawPois, defaultLanguage]);
 
   useHeartbeat();
 
@@ -159,28 +183,28 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-[100dvh] w-full md:max-w-md md:mx-auto bg-zinc-50 font-sans text-zinc-900 md:border-x border-zinc-200 overflow-hidden md:shadow-2xl md:my-4 md:h-[calc(100vh-2rem)] md:rounded-3xl relative">
-      <Header hasNotifications={notifications.length > 0} onOpenQR={() => setIsQRScannerOpen(true)} />
+      <Header />
 
       <main className="flex-1 relative overflow-hidden">
         <AnimatePresence mode="wait">
           {activeTab === 'map' && (
             <motion.div key="map" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full w-full relative z-0">
-              <MapContainer 
-                 center={[userLocation.lat, userLocation.lng]} 
-                 zoom={15} 
-                 zoomControl={false}
-                 style={{ height: '100%', width: '100%', zIndex: 0 }}
+              <MapContainer
+                center={[userLocation.lat, userLocation.lng]}
+                zoom={15}
+                zoomControl={false}
+                style={{ height: '100%', width: '100%', zIndex: 0 }}
               >
                 <TileLayer
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                 />
                 <MapUpdater center={{ lat: userLocation.lat, lng: userLocation.lng }} />
-                
+
                 {pois.map(poi => (
-                  <Marker 
-                    key={poi.id} 
-                    position={[poi.lat, poi.lng]} 
+                  <Marker
+                    key={poi.id}
+                    position={[poi.lat, poi.lng]}
                     icon={poiIcon}
                     eventHandlers={{ click: () => setSelectedPoi(poi) }}
                   />
@@ -193,7 +217,7 @@ export default function App() {
                 <button onClick={() => {
                   if ('geolocation' in navigator) {
                     navigator.geolocation.getCurrentPosition(pos => {
-                       setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                      setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
                     });
                   }
                 }} className="w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center text-emerald-600 active:scale-95 transition-transform hover:bg-zinc-50 border border-zinc-100">
@@ -240,36 +264,9 @@ export default function App() {
             <motion.div key="tracking" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} className="h-full p-6 space-y-8">
               <div className="space-y-2">
                 <h2 className="text-lg font-bold">Cài đặt</h2>
-                <p className="text-sm text-zinc-500">Quản lý tài khoản, vị trí và thông báo.</p>
+                <p className="text-sm text-zinc-500">Quản lý ngôn ngữ và vị trí.</p>
               </div>
 
-              {/* Login Section */}
-              <div className="bg-white rounded-2xl border border-zinc-100 p-4 shadow-sm">
-                 <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-3">Tài khoản</h3>
-                 {!isLoggedIn ? (
-                     <div className="space-y-3">
-                       <p className="text-sm text-zinc-600">Đăng nhập để lưu lịch sử chuyến đi và đánh giá quán ăn.</p>
-                       <button onClick={handleLogin} className="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl active:bg-emerald-700 transition-colors">
-                           Đăng nhập / Đăng ký
-                       </button>
-                    </div>
-                 ) : (
-                    <div className="flex items-center justify-between">
-                       <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center font-bold text-lg">
-                             U
-                          </div>
-                          <div>
-                             <p className="text-sm font-bold">User123</p>
-                             <p className="text-[10px] text-zinc-400">user123@example.com</p>
-                          </div>
-                       </div>
-                       <button onClick={() => setIsLoggedIn(false)} className="text-sm text-red-500 font-semibold px-3 py-1.5 bg-red-50 rounded-lg active:bg-red-100">
-                          Đăng xuất
-                       </button>
-                    </div>
-                 )}
-              </div>
               <div className="bg-white rounded-2xl border border-zinc-100 p-4 space-y-4 shadow-sm">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -303,52 +300,6 @@ export default function App() {
                   </button>
                 </div>
               </div>
-
-              {isLoggedIn && (
-                <div className="space-y-3">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-rose-500 flex items-center gap-1.5">
-                    <Heart size={14} fill="currentColor" /> Quán Yêu Thích
-                  </h3>
-                  <div className="space-y-2">
-                    {favorites.length === 0 ? (
-                      <p className="text-sm text-zinc-400 italic">Bạn chưa lưu quán ăn nào.</p>
-                    ) : (
-                      favorites.map(favId => {
-                        const favPoi = pois.find(p => p.id === favId);
-                        if(!favPoi) return null;
-                        return (
-                          <div key={favId} onClick={() => { setSelectedPoi(favPoi); setActiveTab('map'); }} className="flex items-center gap-3 p-3 bg-white border border-rose-100 shadow-sm rounded-xl cursor-pointer active:scale-95 transition-transform">
-                            <img src={favPoi.image} className="w-10 h-10 rounded-lg object-cover" />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-bold text-zinc-900 truncate">{favPoi.name}</p>
-                              <p className="text-xs text-zinc-500 truncate">{favPoi.specialty}</p>
-                            </div>
-                            <button onClick={(e) => toggleFavorite(favId, e)} className="p-2 text-rose-500 hover:scale-110 transition-transform">
-                              <Heart size={16} fill="currentColor" />
-                            </button>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-3">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400">Lịch sử thông báo</h3>
-                <div className="space-y-2">
-                  {notifications.length === 0 ? (
-                    <p className="text-sm text-zinc-400 italic">Chưa có thông báo nào.</p>
-                  ) : (
-                    notifications.map((note, i) => (
-                      <div key={i} className="flex items-start gap-3 p-3 bg-zinc-100 rounded-xl">
-                        <Bell size={14} className="mt-0.5 text-zinc-500" />
-                        <p className="text-xs text-zinc-700">{note}</p>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -360,41 +311,56 @@ export default function App() {
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedPoi(null)} className="absolute inset-0 bg-black/40 z-40" />
               <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="absolute bottom-0 left-0 right-0 bg-white rounded-t-[32px] z-50 p-6 shadow-2xl max-h-[85%] overflow-y-auto">
                 <div className="w-12 h-1.5 bg-zinc-200 rounded-full mx-auto mb-6" />
-                <div className="relative mb-4">
-                  <img src={selectedPoi.image} alt={selectedPoi.name} className="w-full h-48 rounded-2xl object-cover shadow-md" referrerPolicy="no-referrer" />
-                  <button onClick={(e) => toggleFavorite(selectedPoi.id, e)} className="absolute top-4 right-4 bg-white/90 backdrop-blur p-2.5 rounded-full shadow-lg text-rose-500 active:scale-95 transition-transform">
-                    <Heart size={20} fill={favorites.includes(selectedPoi.id) ? "currentColor" : "none"} />
-                  </button>
-                </div>
-                <div className="flex justify-between items-start mb-2">
-                  <h2 className="text-2xl font-bold text-zinc-900 leading-tight">{selectedPoi.name}</h2>
-                  <div className="flex items-center text-amber-500 bg-amber-50 px-2 py-1 rounded-lg">
-                    <Star size={14} fill="currentColor" />
-                    <span className="text-sm font-bold ml-1">{selectedPoi.rating}</span>
-                  </div>
-                </div>
-                <p className="text-emerald-600 font-bold text-sm mb-4">{selectedPoi.specialty}</p>
-                <div className="flex gap-4 mb-6">
-                  <div className="flex items-center gap-1.5 text-zinc-500"><Clock size={14} /><span className="text-xs">{selectedPoi.hours}</span></div>
-                  <div className="flex items-center gap-1.5 text-zinc-500"><Navigation size={14} /><span className="text-xs">{calculateDistance(userLocation.lat, userLocation.lng, selectedPoi.lat, selectedPoi.lng).toFixed(0)}m</span></div>
-                </div>
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-2">Giới thiệu</h3>
-                    <p className="text-sm text-zinc-600 leading-relaxed">{selectedPoi.description}</p>
-                  </div>
-                  <AudioPlayer poi={selectedPoi} defaultLanguage={defaultLanguage || undefined} />
-                  <div>
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-3">Đánh giá nhanh</h3>
-                    <div className="flex justify-between gap-2">
-                      {[1, 2, 3, 4, 5].map(s => (
-                        <button key={s} className="flex-1 py-3 rounded-xl border border-zinc-100 hover:bg-amber-50 hover:border-amber-200 transition-all group">
-                          <Star size={20} className="mx-auto text-zinc-300 group-hover:text-amber-500 group-hover:fill-amber-500" />
-                        </button>
-                      ))}
+                {calculateDistance(userLocation.lat, userLocation.lng, selectedPoi.lat, selectedPoi.lng) <= 100 ? (
+                  <>
+                    <div className="relative mb-4">
+                      <img src={selectedPoi.image} alt={selectedPoi.name} className="w-full h-48 rounded-2xl object-cover shadow-md" referrerPolicy="no-referrer" />
                     </div>
+                    <div className="flex justify-between items-start mb-2">
+                      <h2 className="text-2xl font-bold text-zinc-900 leading-tight">{selectedPoi.name}</h2>
+                      <div className="flex items-center text-amber-500 bg-amber-50 px-2 py-1 rounded-lg">
+                        <Star size={14} fill="currentColor" />
+                        <span className="text-sm font-bold ml-1">{selectedPoi.rating}</span>
+                      </div>
+                    </div>
+                    <p className="text-emerald-600 font-bold text-sm mb-4">{selectedPoi.specialty}</p>
+                    <div className="flex gap-4 mb-6">
+                      <div className="flex items-center gap-1.5 text-zinc-500"><Clock size={14} /><span className="text-xs">{selectedPoi.hours}</span></div>
+                      <div className="flex items-center gap-1.5 text-zinc-500"><Navigation size={14} /><span className="text-xs">{calculateDistance(userLocation.lat, userLocation.lng, selectedPoi.lat, selectedPoi.lng).toFixed(0)}m</span></div>
+                    </div>
+                    <div className="space-y-6">
+                      <div>
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-2">Giới thiệu</h3>
+                        <p className="text-sm text-zinc-600 leading-relaxed">{selectedPoi.description}</p>
+                      </div>
+                      <AudioPlayer poi={selectedPoi} defaultLanguage={defaultLanguage || undefined} />
+                      <div>
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-3">Đánh giá nhanh</h3>
+                        <div className="flex justify-between gap-2">
+                          {[1, 2, 3, 4, 5].map(s => (
+                            <button key={s} className="flex-1 py-3 rounded-xl border border-zinc-100 hover:bg-amber-50 hover:border-amber-200 transition-all group">
+                              <Star size={20} className="mx-auto text-zinc-300 group-hover:text-amber-500 group-hover:fill-amber-500" />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-6 text-center px-2">
+                    <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mb-5 border border-emerald-100">
+                      <Lock size={36} />
+                    </div>
+                    <h2 className="text-xl font-bold text-zinc-900 mb-2">{selectedPoi.name}</h2>
+                    <p className="text-sm text-zinc-500 mb-8 leading-relaxed">
+                      Bạn đang ở cách quán <b>{calculateDistance(userLocation.lat, userLocation.lng, selectedPoi.lat, selectedPoi.lng).toFixed(0)}m</b>.<br />
+                      Vui lòng di chuyển đến phạm vi <b>dưới 100m</b> để xem thông tin chi tiết và nghe thuyết minh.
+                    </p>
+                    <button onClick={() => setSelectedPoi(null)} className="w-full px-6 py-3.5 bg-emerald-600 text-white font-bold rounded-xl active:bg-emerald-700 transition-colors shadow-sm">
+                      Đã hiểu
+                    </button>
                   </div>
-                </div>
+                )}
               </motion.div>
             </>
           )}
@@ -403,25 +369,8 @@ export default function App() {
 
       <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
 
-      {/* Modals & Overlays */}
-      {isQRScannerOpen && (
-        <QRScanner 
-          onClose={() => setIsQRScannerOpen(false)}
-          onScanSuccess={(text) => {
-            setIsQRScannerOpen(false);
-            const foundPoi = pois.find(p => p.id === text);
-            if (foundPoi) {
-              setSelectedPoi(foundPoi);
-              setActiveTab('map');
-            } else {
-              alert(`Đã quét mã: ${text}\nKhông tìm thấy địa điểm trên hệ thống.`);
-            }
-          }}
-        />
-      )}
-
       {showLanguageModal && (
-        <LanguageSelectionModal 
+        <LanguageSelectionModal
           onSelect={(lang) => {
             setDefaultLanguage(lang);
             localStorage.setItem('defaultLanguage', lang);
