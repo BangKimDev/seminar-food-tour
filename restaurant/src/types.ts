@@ -9,6 +9,7 @@ export interface Restaurant {
   ownerEmail: string;
   name: string;
   description: string;
+  cuisine?: string;
   location: { lat: number; lng: number };
   imageUrl?: string;
   openingHours?: string;
@@ -41,6 +42,7 @@ export interface MenuItem {
   cropX?: number;
   cropY?: number;
   isAvailable: boolean;
+  isFeatured?: boolean;
   createdAt: string;
   updatedAt?: string;
 }
