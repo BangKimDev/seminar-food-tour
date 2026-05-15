@@ -27,6 +27,7 @@ import { POI, Location, TabType } from './types/index.ts';
 import { MOCK_POIS } from './data/mockData.ts';
 import { calculateDistance } from './utils/geoUtils.ts';
 import { useLocationTracking } from './hooks/useLocation.ts';
+import { useHeartbeat } from './hooks/useHeartbeat.ts';
 import { restaurantService } from './services/restaurantService.ts';
 import { AudioPlayer } from './components/AudioPlayer.tsx';
 import { QRScanner } from './components/QRScanner.tsx';
@@ -143,6 +144,8 @@ export default function App() {
     }
     setFavorites(prev => prev.includes(poiId) ? prev.filter(id => id !== poiId) : [...prev, poiId]);
   };
+
+  useHeartbeat();
 
   const { userLocation, setUserLocation, activeGeofencePoi, notifications } = useLocationTracking(isTracking, pois);
 

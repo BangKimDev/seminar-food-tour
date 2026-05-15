@@ -12,7 +12,7 @@ export const dashboardController = {
       startOfWeek.setHours(0, 0, 0, 0);
 
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const startOf30min = new Date(now.getTime() - 30 * 60 * 1000);
+      const startOf60s = new Date(now.getTime() - 60 * 1000);
       const startOf30days = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
       const startOf12weeks = new Date(now.getTime() - 12 * 7 * 24 * 60 * 60 * 1000);
 
@@ -65,9 +65,9 @@ export const dashboardController = {
           select: { visitorId: true },
           distinct: ['visitorId'],
         }).then(rows => rows.length),
-        // Active now (last 30 min)
+        // Active now (heartbeat within last 60s)
         prisma.visit.findMany({
-          where: { createdAt: { gte: startOf30min }, visitorId: { not: null } },
+          where: { createdAt: { gte: startOf60s }, action: 'heartbeat', visitorId: { not: null } },
           select: { visitorId: true },
           distinct: ['visitorId'],
         }).then(rows => rows.length),

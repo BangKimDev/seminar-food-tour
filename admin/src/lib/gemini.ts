@@ -16,6 +16,47 @@ export async function translateContent(text: string, targetLang: string) {
   }
 }
 
+export async function batchTranslate(text: string, languages: { code: string; name: string }[]): Promise<Record<string, string>> {
+  try {
+    const langList = languages.map(l => `${l.code}: ${l.name}`).join('\n');
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: [
+        {
+          text: `Translate the following Vietnamese text to ALL of these languages.
+Return ONLY a valid JSON object where keys are language codes and values are the translated text.
+Do NOT include markdown formatting, code blocks, or any text outside the JSON object.
+
+Languages to translate to:
+${langList}
+
+Vietnamese text:
+${text}
+
+JSON:`,
+        },
+      ],
+    });
+
+    const raw = response.text || '{}';
+    // Extract JSON from response (handle markdown wrapping if any)
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    const result = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
+
+    // Validate result has expected keys
+    const valid: Record<string, string> = {};
+    for (const lang of languages) {
+      if (result[lang.code] && typeof result[lang.code] === 'string') {
+        valid[lang.code] = result[lang.code];
+      }
+    }
+    return valid;
+  } catch (error) {
+    console.error("Batch translation error:", error);
+    return {};
+  }
+}
+
 function pcmToWav(pcmBase64: string, sampleRate: number = 24000): string {
   const pcmData = atob(pcmBase64);
   const pcmBytes = new Uint8Array(pcmData.length);

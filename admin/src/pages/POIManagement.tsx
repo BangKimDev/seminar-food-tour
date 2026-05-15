@@ -30,8 +30,11 @@ import {
   X,
   Map as MapIcon,
   List,
+  Loader2,
+  Globe,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { geocodeAddress } from '../lib/geocoding';
 import {
   Dialog,
   DialogContent,
@@ -68,6 +71,8 @@ export const POIManagement: React.FC<POIManagementProps> = ({ pois, onAdd, onUpd
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [selectedPoi, setSelectedPoi] = useState<POI | null>(null);
   const [newPoi, setNewPoi] = useState<Partial<POI>>({ category: 'main' });
+  const [addressInput, setAddressInput] = useState('');
+  const [isGeocoding, setIsGeocoding] = useState(false);
 
   const filteredPois = pois.filter(p =>
     p.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -98,16 +103,19 @@ export const POIManagement: React.FC<POIManagementProps> = ({ pois, onAdd, onUpd
   const handleClose = () => {
     setDialogMode(null);
     setNewPoi({ category: 'main' });
+    setAddressInput('');
   };
 
   const openAddDialog = () => {
     setNewPoi({ category: 'main' });
+    setAddressInput('');
     setDialogMode('add');
   };
 
   const openEditDialog = (poi: POI, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setNewPoi({ ...poi });
+    setAddressInput('');
     setDialogMode('edit');
   };
 
@@ -117,6 +125,28 @@ export const POIManagement: React.FC<POIManagementProps> = ({ pois, onAdd, onUpd
       onDelete(poi.id);
       toast.success(`Đã xóa POI "${poi.name}"`);
       if (selectedPoi?.id === poi.id) setSelectedPoi(null);
+    }
+  };
+
+  const handleGeocode = async () => {
+    if (!addressInput.trim()) {
+      toast.error('Vui lòng nhập địa chỉ');
+      return;
+    }
+
+    setIsGeocoding(true);
+    try {
+      const result = await geocodeAddress(addressInput);
+      if (result) {
+        setNewPoi({ ...newPoi, lat: result.lat, lng: result.lng });
+        toast.success(`Đã tìm thấy: ${result.displayName.split(',')[0]}`);
+      } else {
+        toast.error('Không tìm thấy địa chỉ. Vui lòng thử lại hoặc click trên bản đồ.');
+      }
+    } catch {
+      toast.error('Lỗi tra cứu địa chỉ');
+    } finally {
+      setIsGeocoding(false);
     }
   };
 
@@ -409,6 +439,32 @@ export const POIManagement: React.FC<POIManagementProps> = ({ pois, onAdd, onUpd
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="poi-address">Địa chỉ (tra cứu tọa độ)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="poi-address"
+                    placeholder="VD: Đại học Sài Gòn, Quận 1, TP.HCM"
+                    value={addressInput}
+                    onChange={e => setAddressInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleGeocode(); }}
+                    className="flex-1"
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleGeocode}
+                    disabled={isGeocoding}
+                    title="Tra cứu địa chỉ"
+                  >
+                    {isGeocoding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Globe className="w-4 h-4" />}
+                  </Button>
+                </div>
+                <p className="text-xs text-slate-400">
+                  Nhập địa chỉ tiếng Việt và nhấn Enter hoặc nút Tra cứu
+                </p>
               </div>
 
               {/* Tọa độ đã chọn */}

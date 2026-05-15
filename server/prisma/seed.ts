@@ -46,7 +46,6 @@ async function main() {
   const ownerPassword = await bcrypt.hash('123456', 10);
   const demoOwner = await prisma.restaurantOwner.create({
     data: {
-      username: 'admin',
       email: 'admin@foodstreet.vn',
       passwordHash: ownerPassword,
       name: 'Quán Ăn Mẫu FoodStreet',
@@ -61,7 +60,6 @@ async function main() {
       ownerId: demoOwner.id,
       name: 'Quán Ăn Mẫu FoodStreet',
       description: 'Quán ăn mẫu dành cho chủ quản lý và thử nghiệm tính năng. Thực đơn đa dạng với các món ăn Việt Nam truyền thống.',
-      address: 'Địa chỉ mẫu FootStreet',
       cuisine: 'Việt Nam',
       openingHours: '08:00 - 22:00',
       status: 'approved',

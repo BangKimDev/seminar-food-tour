@@ -1,12 +1,13 @@
 
 import React, { useState } from 'react';
 import { Restaurant, AudioGuide } from '../types';
-import { translateContent, generateTTS } from '../lib/gemini';
+import { translateContent, generateTTS, batchTranslate } from '../lib/gemini';
 import { uploadService } from '../services/uploadService';
 import { useAudioGuides } from '../hooks/useAudioGuides';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { Mic2, Languages, Play, Loader2, Save, Trash2, Globe, Upload, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -40,6 +41,10 @@ export const AudioGuideManagement: React.FC<AudioGuideManagementProps> = ({
   const [targetLang, setTargetLang] = useState<string>('en');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isBatchProcessing, setIsBatchProcessing] = useState(false);
+  const [batchProgress, setBatchProgress] = useState('');
+  const [batchDone, setBatchDone] = useState(0);
+  const [batchTotal, setBatchTotal] = useState(0);
   const [previewContent, setPreviewContent] = useState('');
   const [previewAudio, setPreviewAudio] = useState<string | null>(null);
   const [previewAudioPublicId, setPreviewAudioPublicId] = useState<string | null>(null);
@@ -127,6 +132,85 @@ export const AudioGuideManagement: React.FC<AudioGuideManagementProps> = ({
     }
   };
 
+  const handleBatchGenerate = async () => {
+    if (!selectedRes) return;
+
+    const targetLanguages = languages.filter(l => l.code !== 'vi');
+    const existingCodes = new Set(existingGuides.map(g => g.language));
+    const toProcess = targetLanguages.filter(l => !existingCodes.has(l.code));
+
+    if (toProcess.length === 0) {
+      toast.info('Tất cả ngôn ngữ đã được tạo thuyết minh');
+      return;
+    }
+
+    setIsBatchProcessing(true);
+    setBatchDone(0);
+    setBatchTotal(toProcess.length);
+
+    try {
+      // Step 1: Batch translate all languages in 1 call
+      setBatchProgress('Đang dịch sang tất cả ngôn ngữ...');
+      const translations = await batchTranslate(selectedRes.description, toProcess.map(l => ({ code: l.code, name: l.displayName })));
+
+      const failedLangs: string[] = [];
+
+      // Step 2: Generate TTS + upload + save for each language
+      for (let i = 0; i < toProcess.length; i++) {
+        const lang = toProcess[i];
+        const translatedText = translations[lang.code];
+
+        if (!translatedText) {
+          failedLangs.push(lang.displayName);
+          setBatchDone(i + 1);
+          continue;
+        }
+
+        setBatchProgress(`Đang tạo audio (${lang.displayName})...`);
+
+        try {
+          const audio = await generateTTS(translatedText);
+
+          let audioUrl: string | undefined;
+          if (audio) {
+            setBatchProgress(`Đang upload (${lang.displayName})...`);
+            const base64Data = audio.split(',')[1] || audio;
+            const uploadResult = await uploadService.uploadAudio(
+              base64Data,
+              `guide_${selectedResId}_${lang.code}`
+            );
+            audioUrl = uploadResult.url;
+          }
+
+          onAdd({
+            restaurantId: selectedResId,
+            language: lang.code,
+            content: translatedText,
+            audioUrl,
+          });
+        } catch {
+          failedLangs.push(lang.displayName);
+        }
+
+        setBatchDone(i + 1);
+      }
+
+      const successCount = toProcess.length - failedLangs.length;
+      const msg = `✅ Đã tạo ${successCount}/${toProcess.length} thuyết minh`;
+      if (failedLangs.length > 0) {
+        toast.success(msg + ` (thất bại: ${failedLangs.join(', ')})`);
+      } else {
+        toast.success(msg);
+      }
+
+      setBatchProgress('');
+    } catch (error) {
+      toast.error('Lỗi xử lý batch');
+    } finally {
+      setIsBatchProcessing(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card className="border-amber-200 bg-amber-50/50">
@@ -193,6 +277,43 @@ export const AudioGuideManagement: React.FC<AudioGuideManagementProps> = ({
                   {isProcessing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Mic2 className="w-4 h-4 mr-2" />}
                   Sinh Audio (TTS)
                 </Button>
+
+                <Separator className="my-2" />
+
+                <Button 
+                  className="w-full" 
+                  variant="default"
+                  disabled={!selectedResId || isBatchProcessing || isProcessing || isUploading}
+                  onClick={handleBatchGenerate}
+                >
+                  {isBatchProcessing ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Globe className="w-4 h-4 mr-2" />
+                  )}
+                  Dịch & Sinh tất cả ngôn ngữ
+                </Button>
+
+                {isBatchProcessing && (
+                  <div className="space-y-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                      <span>{batchProgress}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-primary rounded-full transition-all duration-300"
+                          style={{ width: `${batchTotal > 0 ? (batchDone / batchTotal) * 100 : 0}%` }}
+                        />
+                      </div>
+                      <span className="text-xs text-slate-500 font-medium min-w-[40px] text-right">
+                        {batchDone}/{batchTotal}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
                 <Button 
                   className="w-full" 
                   disabled={!previewContent || isProcessing || isUploading}

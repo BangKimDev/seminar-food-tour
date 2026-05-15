@@ -17,8 +17,15 @@ export default defineConfig(({mode}) => {
     },
     server: {
       host: '0.0.0.0',
-      allowedHosts: ['ngrok-free.app', '.ngrok-free.app'],  // Cho phép tất cả ngrok subdomains
+      port: 5175,
+      allowedHosts: ['ngrok-free.app', '.ngrok-free.app'],
       hmr: process.env.DISABLE_HMR !== 'true',
+      proxy: {
+        '/api': {
+          target: 'http://localhost:4000',
+          changeOrigin: true,
+        },
+      },
     }
   };
 });

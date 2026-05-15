@@ -110,6 +110,8 @@ export const Dashboard: React.FC = () => {
 
   useEffect(() => {
     loadDashboard();
+    const interval = setInterval(loadDashboard, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const loadDashboard = async () => {
