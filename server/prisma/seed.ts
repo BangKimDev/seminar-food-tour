@@ -47,7 +47,7 @@ async function main() {
   const demoOwner = await prisma.restaurantOwner.create({
     data: {
       email: 'admin@foodstreet.vn',
-      username: 'admin_foodstreet',
+      username: 'admin',
       passwordHash: ownerPassword,
       name: 'Quán Ăn Mẫu FoodStreet',
       status: 'approved',

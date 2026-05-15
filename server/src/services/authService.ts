@@ -96,7 +96,7 @@ export const adminService = {
 };
 
 export const ownerService = {
-  async register(email: string, password: string, name: string, username: string, address?: string) {
+  async register(email: string, password: string, name: string, username: string, address?: string, description?: string, cuisine?: string, openingHours?: string) {
     const existingByEmail = await prisma.restaurantOwner.findUnique({ where: { email } });
     if (existingByEmail) {
       throw new Error('Email already registered');
@@ -122,8 +122,10 @@ export const ownerService = {
     const restaurant = await prisma.restaurant.create({
       data: {
         name,
-        description: '',
+        description: description || '',
         address,
+        cuisine: cuisine || null,
+        openingHours: openingHours || null,
         ownerId: owner.id,
         status: 'approved',
       },
