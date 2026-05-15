@@ -8,7 +8,8 @@ import {
   LogOut,
   ChevronRight,
   User,
-  QrCode
+  QrCode,
+  UserCheck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AppState, AuthUser } from '@/src/types';
@@ -41,6 +42,7 @@ export const Layout: React.FC<LayoutProps> = ({
     { id: 'restaurants', label: 'Quản lý quán ăn', icon: Utensils },
     { id: 'audio', label: 'Quản lý thuyết minh', icon: Mic2 },
     { id: 'qr', label: 'QR Code', icon: QrCode },
+    { id: 'owner_approval', label: 'Duyệt chủ quán', icon: UserCheck },
   ];
 
   return (
