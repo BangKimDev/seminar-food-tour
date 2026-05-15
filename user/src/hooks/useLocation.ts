@@ -11,6 +11,7 @@ export function useLocationTracking(isTracking: boolean, pois: POI[] = []) {
     const [userLocation, setUserLocation] = useState<Location>({ lat: 10.7602, lng: 106.6815 });
     const [activeGeofencePoi, setActiveGeofencePoi] = useState<POI | null>(null);
     const [notifications, setNotifications] = useState<string[]>([]);
+    const [gpsReady, setGpsReady] = useState(false);
 
     // Hỏi và lấy vị trí thực tế của người dùng khi bắt đầu sử dụng app
     useEffect(() => {
@@ -21,12 +22,16 @@ export function useLocationTracking(isTracking: boolean, pois: POI[] = []) {
                         lat: position.coords.latitude,
                         lng: position.coords.longitude
                     });
+                    setGpsReady(true);
                 },
                 (error) => {
                     console.warn("Lỗi lấy vị trí người dùng:", error.message);
+                    setGpsReady(true); // Fallback: allow geofence even if GPS fails (e.g. for simulation)
                 },
                 { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
+        } else {
+            setGpsReady(true);
         }
     }, []);
 
@@ -44,6 +49,8 @@ export function useLocationTracking(isTracking: boolean, pois: POI[] = []) {
 
     // Geofence Logic
     useEffect(() => {
+        if (!isTracking || !gpsReady) return;
+
         pois.forEach(poi => {
             const dist = calculateDistance(userLocation.lat, userLocation.lng, poi.lat, poi.lng);
             if (dist <= 50 && activeGeofencePoi?.id !== poi.id) {
@@ -53,7 +60,7 @@ export function useLocationTracking(isTracking: boolean, pois: POI[] = []) {
                 setActiveGeofencePoi(null);
             }
         });
-    }, [userLocation, activeGeofencePoi, pois]);
+    }, [userLocation, activeGeofencePoi, pois, isTracking, gpsReady]);
 
     return { userLocation, setUserLocation, activeGeofencePoi, notifications };
 }
