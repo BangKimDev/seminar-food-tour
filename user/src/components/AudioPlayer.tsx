@@ -7,6 +7,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, Volume2, Globe } from 'lucide-react';
 import { motion } from 'motion/react';
 import { POI } from '../types/index.ts';
+import { restaurantService } from '../services/restaurantService.ts';
 
 interface AudioPlayerProps {
     poi: POI;
@@ -27,6 +28,7 @@ const GLOBAL_LANGUAGES = [
 export const AudioPlayer: React.FC<AudioPlayerProps> = ({ poi, onEnded, defaultLanguage }) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
+    const hasTrackedPlay = useRef(false);
     // Lấy danh sách audio khả dụng hoặc dùng fallback
     const audioSources = (poi.audioGuides && poi.audioGuides.length > 0) 
         ? poi.audioGuides 
@@ -43,6 +45,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ poi, onEnded, defaultL
     useEffect(() => {
         const hasDefault = audioSources.find(a => a.language === defaultLanguage);
         setLang(hasDefault ? defaultLanguage! : (audioSources[0]?.language || 'vi'));
+        hasTrackedPlay.current = false;
     }, [poi.id, defaultLanguage]);
 
     const currentAudioUrl = audioSources.find(a => a.language === lang)?.audioUrl || audioSources[0]?.audioUrl || '';
@@ -73,6 +76,14 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ poi, onEnded, defaultL
         };
     }, [onEnded]);
 
+    const handlePlay = () => {
+        if (!hasTrackedPlay.current) {
+            hasTrackedPlay.current = true;
+            restaurantService.recordAudioPlay(poi.id);
+        }
+        setIsPlaying(!isPlaying);
+    };
+
     const handleLangChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         setLang(e.target.value);
         setIsPlaying(false);
@@ -80,6 +91,10 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ poi, onEnded, defaultL
         if (audioRef.current) {
             audioRef.current.load(); // Force reload audio when source changes
             setTimeout(() => setIsPlaying(true), 100); // Auto-play translated version
+            if (!hasTrackedPlay.current) {
+                hasTrackedPlay.current = true;
+                restaurantService.recordAudioPlay(poi.id);
+            }
         }
     };
 
@@ -110,7 +125,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ poi, onEnded, defaultL
 
             <div className="flex items-center gap-4">
                 <button
-                    onClick={() => setIsPlaying(!isPlaying)}
+                    onClick={handlePlay}
                     className="w-12 h-12 shrink-0 bg-emerald-500 rounded-full flex items-center justify-center hover:bg-emerald-400 transition-colors"
                 >
                     {isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" className="ml-1" />}

@@ -48,6 +48,14 @@ export const restaurantService = {
   async recordView(id: string): Promise<void> {
     return apiClient.post(`/restaurants/${id}/view`, {});
   },
+
+  async recordEntry(id: string): Promise<void> {
+    return apiClient.post(`/restaurants/${id}/enter`, {});
+  },
+
+  async recordAudioPlay(id: string): Promise<void> {
+    return apiClient.post(`/restaurants/${id}/audio-play`, {});
+  },
 };
 
 export const audioService = {

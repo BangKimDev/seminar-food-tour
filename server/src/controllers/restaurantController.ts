@@ -120,4 +120,34 @@ export const restaurantController = {
       res.status(500).json({ error: error.message });
     }
   },
+
+  async incrementEntry(req: Request, res: Response): Promise<void> {
+    try {
+      const id = req.params.id as string;
+      await restaurantService.incrementEntry(id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  async incrementAudioPlay(req: Request, res: Response): Promise<void> {
+    try {
+      const id = req.params.id as string;
+      await restaurantService.incrementAudioPlay(id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  async getOwnerStats(req: Request, res: Response): Promise<void> {
+    try {
+      const id = req.params.id as string;
+      const stats = await restaurantService.getOwnerStats(id);
+      res.json(stats);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  },
 };

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   Map as MapIcon,
   List,
@@ -87,6 +87,18 @@ const NavButton = ({ active, onClick, icon, label }: { active: boolean, onClick:
   </button>
 );
 
+// --- Entry Tracker ---
+
+function EntryTracker({ poiId, trackedEntries }: { poiId: string; trackedEntries: React.MutableRefObject<Set<string>> }) {
+  useEffect(() => {
+    if (!trackedEntries.current.has(poiId)) {
+      trackedEntries.current.add(poiId);
+      restaurantService.recordEntry(poiId);
+    }
+  }, [poiId, trackedEntries]);
+  return null;
+}
+
 // --- Main App ---
 
 export default function App() {
@@ -99,6 +111,7 @@ export default function App() {
 
   const [defaultLanguage, setDefaultLanguage] = useState<string | null>(localStorage.getItem('defaultLanguage'));
   const [showLanguageModal, setShowLanguageModal] = useState(!localStorage.getItem('defaultLanguage'));
+  const trackedEntryPois = useRef(new Set<string>());
 
   useEffect(() => {
     Promise.all([
@@ -303,6 +316,11 @@ export default function App() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Track entry when POI detail is viewed within range */}
+        {selectedPoi && calculateDistance(userLocation.lat, userLocation.lng, selectedPoi.lat, selectedPoi.lng) <= 100 && (
+          <EntryTracker poiId={selectedPoi.id} trackedEntries={trackedEntryPois} />
+        )}
 
         {/* POI Detail Bottom Sheet */}
         <AnimatePresence>
