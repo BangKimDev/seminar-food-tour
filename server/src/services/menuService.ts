@@ -8,6 +8,7 @@ export interface CreateMenuItemData {
   description?: string;
   imageUrl?: string;
   isAvailable?: boolean;
+  isFeatured?: boolean;
 }
 
 export interface UpdateMenuItemData {
@@ -17,6 +18,7 @@ export interface UpdateMenuItemData {
   description?: string;
   imageUrl?: string;
   isAvailable?: boolean;
+  isFeatured?: boolean;
 }
 
 export const menuService = {
@@ -37,6 +39,7 @@ export const menuService = {
         description: data.description,
         imageUrl: data.imageUrl,
         isAvailable: data.isAvailable,
+        isFeatured: data.isFeatured,
       },
     });
   },

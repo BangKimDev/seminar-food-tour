@@ -27,6 +27,7 @@ export interface MenuItemData {
   category?: string;
   imageUrl?: string;
   isAvailable: boolean;
+  isFeatured?: boolean;
 }
 
 export const restaurantService = {
@@ -68,6 +69,10 @@ export const restaurantService = {
     return apiClient.delete(`/restaurants/menu/${id}`);
   },
 
+  async toggleFeatured(id: string, isFeatured: boolean): Promise<MenuItemData> {
+    return apiClient.patch<MenuItemData>(`/restaurants/menu/${id}`, { isFeatured });
+  },
+
   async getStats(): Promise<{ totalDishes: number; views: number; status: string }> {
     const restaurant = await this.getMyRestaurant();
     if (!restaurant) return { totalDishes: 0, views: 0, status: 'pending' };
@@ -78,5 +83,13 @@ export const restaurantService = {
       views: restaurant.views,
       status: restaurant.status,
     };
+  },
+
+  async getOwnerStats(restaurantId: string): Promise<{ entryCount: number; audioPlayCount: number }> {
+    try {
+      return await apiClient.get<{ entryCount: number; audioPlayCount: number }>(`/restaurants/${restaurantId}/stats`);
+    } catch {
+      return { entryCount: 0, audioPlayCount: 0 };
+    }
   },
 };

@@ -91,6 +91,8 @@ model Restaurant {
   status       RestaurantStatus  @default(pending)
   imageUrl     String?
   views        Int               @default(0)
+  entryCount   Int               @default(0)
+  audioPlayCount Int             @default(0)
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
 
@@ -113,6 +115,7 @@ model MenuItem {
   category      String?
   imageUrl      String?
   isAvailable   Boolean    @default(true)
+  isFeatured    Boolean    @default(false)
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 

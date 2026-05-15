@@ -26,6 +26,7 @@ export const MenuItemModal = ({
   const [description, setDescription] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [isAvailable, setIsAvailable] = useState(true);
+  const [isFeatured, setIsFeatured] = useState(false);
   const [previewUrl, setPreviewUrl] = useState('');
   const [translateX, setTranslateX] = useState(0);
   const [translateY, setTranslateY] = useState(0);
@@ -42,6 +43,7 @@ export const MenuItemModal = ({
       setImageUrl(editingItem.imageUrl || '');
       setPreviewUrl(editingItem.imageUrl || '');
       setIsAvailable(editingItem.isAvailable);
+      setIsFeatured(editingItem.isFeatured || false);
       setTranslateX(editingItem.cropX || 0);
       setTranslateY(editingItem.cropY || 0);
     } else {
@@ -52,6 +54,7 @@ export const MenuItemModal = ({
       setImageUrl('');
       setPreviewUrl('');
       setIsAvailable(true);
+      setIsFeatured(false);
       setTranslateX(0);
       setTranslateY(0);
     }
@@ -150,6 +153,8 @@ export const MenuItemModal = ({
     if (descInput) descInput.value = description;
     if (imageInput) imageInput.value = imageUrl;
     if (availInput) availInput.value = String(isAvailable);
+    const featuredInput = form.querySelector<HTMLInputElement>('[name="isFeatured"]');
+    if (featuredInput) featuredInput.value = String(isFeatured);
     if (cropXInput) cropXInput.value = String(Math.round(translateX));
     if (cropYInput) cropYInput.value = String(Math.round(translateY));
 
@@ -188,6 +193,7 @@ export const MenuItemModal = ({
               <input type="hidden" name="description" />
               <input type="hidden" name="imageUrl" />
               <input type="hidden" name="isAvailable" />
+              <input type="hidden" name="isFeatured" />
               <input type="hidden" name="cropX" />
               <input type="hidden" name="cropY" />
 
@@ -249,7 +255,7 @@ export const MenuItemModal = ({
                     />
                   </div>
 
-                  {/* Toggle */}
+                  {/* Toggle: Đang bán */}
                   <div className="flex items-center gap-3">
                     <button
                       type="button"
@@ -262,6 +268,22 @@ export const MenuItemModal = ({
                     </button>
                     <span className={`text-sm font-semibold ${isAvailable ? 'text-emerald-600' : 'text-slate-400'}`}>
                       {isAvailable ? 'Đang bán' : 'Ngừng bán'}
+                    </span>
+                  </div>
+
+                  {/* Toggle: Nổi bật */}
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setIsFeatured(!isFeatured)}
+                      className={`relative w-11 h-6 rounded-full transition-colors ${isFeatured ? 'bg-amber-500' : 'bg-slate-300'}`}
+                    >
+                      <span
+                        className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${isFeatured ? 'translate-x-5' : 'translate-x-0'}`}
+                      />
+                    </button>
+                    <span className={`text-sm font-semibold ${isFeatured ? 'text-amber-600' : 'text-slate-400'}`}>
+                      {isFeatured ? 'Nổi bật ⭐' : 'Không nổi bật'}
                     </span>
                   </div>
                 </div>
