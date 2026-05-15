@@ -18,6 +18,7 @@ import { RestaurantManagement } from './pages/RestaurantManagement';
 import { AudioGuideManagement } from './pages/AudioGuideManagement';
 import { MyRestaurant }         from './pages/MyRestaurant';
 import { QRCodeManagement }     from './pages/QRCodeManagement';
+import { OwnerApproval }        from './pages/OwnerApproval';
 import { AppState }             from './types';
 import { Toaster }              from '@/components/ui/sonner';
 import { toast }                from 'sonner';
@@ -201,6 +202,10 @@ export default function App() {
 
       {activeTab === 'qr' && user?.role !== 'restaurant_owner' && (
         <QRCodeManagement />
+      )}
+
+      {activeTab === 'owner_approval' && user?.role !== 'restaurant_owner' && (
+        <OwnerApproval />
       )}
 
       <Toaster />

@@ -252,6 +252,9 @@ const validateRegister = (data: {
   confirmPassword: string;
   restaurantName: string;
   detailAddress: string;
+  description: string;
+  cuisine: string;
+  openingHours: string;
 }): ValidationError[] => {
   const errors: ValidationError[] = [];
 
@@ -405,6 +408,9 @@ const RegisterForm = ({ onSwitch, onRegistered, showDialog }: RegisterFormProps)
   const [confirmPassword, setConfirmPassword] = useState('');
   const [restaurantName, setRestaurantName] = useState('');
   const [detailAddress, setDetailAddress] = useState('');
+  const [description, setDescription] = useState('');
+  const [cuisine, setCuisine] = useState('');
+  const [openingHours, setOpeningHours] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -413,7 +419,7 @@ const RegisterForm = ({ onSwitch, onRegistered, showDialog }: RegisterFormProps)
     e.preventDefault();
     setLoading(true);
 
-    const errors = validateRegister({ email, username, password, confirmPassword, restaurantName, detailAddress });
+    const errors = validateRegister({ email, username, password, confirmPassword, restaurantName, detailAddress, description, cuisine, openingHours });
 
     if (errors.length > 0) {
       const messages = errors.map((err) => `• ${err.field}: ${err.message}`).join('\n');
@@ -427,7 +433,7 @@ const RegisterForm = ({ onSwitch, onRegistered, showDialog }: RegisterFormProps)
     }
 
     try {
-      await authService.register(email, password, restaurantName, username, detailAddress);
+      await authService.register(email, password, restaurantName, username, detailAddress, description, cuisine, openingHours);
       showDialog({
         type: 'success',
         title: 'Đăng ký thành công!',
@@ -499,6 +505,40 @@ const RegisterForm = ({ onSwitch, onRegistered, showDialog }: RegisterFormProps)
         placeholder="Số nhà, tên đường, hẻm..."
         value={detailAddress}
         onChange={setDetailAddress}
+      />
+
+      {/* Thông tin nhà hàng */}
+      <div className="pt-2 pb-1">
+        <span className="font-sans text-[9px] font-semibold text-charcoal/35 uppercase tracking-[0.2em]">
+          Thông tin nhà hàng
+        </span>
+      </div>
+
+      <div>
+        <label className="font-sans text-[10px] font-semibold text-charcoal/50 uppercase tracking-[0.15em] block mb-1.5">
+          Mô tả quán ăn
+        </label>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Giới thiệu ngắn về quán ăn của bạn..."
+          rows={3}
+          className="font-sans w-full px-0 pb-2 pt-1 bg-transparent border-b border-charcoal/20 text-charcoal text-sm outline-none transition-all focus:border-amber placeholder:text-charcoal/25 resize-none"
+        />
+      </div>
+
+      <FormField
+        label="Loại ẩm thực"
+        placeholder="VD: Việt Nam, Hàn Quốc..."
+        value={cuisine}
+        onChange={setCuisine}
+      />
+
+      <FormField
+        label="Giờ mở cửa"
+        placeholder="VD: 08:00 - 22:00"
+        value={openingHours}
+        onChange={setOpeningHours}
       />
 
       <button

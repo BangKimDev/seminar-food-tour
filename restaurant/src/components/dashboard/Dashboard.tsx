@@ -24,9 +24,30 @@ interface DashboardProps {
 export const Dashboard = ({ restaurant, onLogout, onRestaurantUpdate }: DashboardProps) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'menu' | 'settings'>('overview');
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [entryCount, setEntryCount] = useState(0);
+  const [audioPlayCount, setAudioPlayCount] = useState(0);
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Fetch live stats (entryCount, audioPlayCount)
+  useEffect(() => {
+    (async () => {
+      try {
+        const stats = await restaurantService.getOwnerStats(restaurant.id);
+        setEntryCount(stats.entryCount);
+        setAudioPlayCount(stats.audioPlayCount);
+      } catch {}
+    })();
+    const interval = setInterval(async () => {
+      try {
+        const stats = await restaurantService.getOwnerStats(restaurant.id);
+        setEntryCount(stats.entryCount);
+        setAudioPlayCount(stats.audioPlayCount);
+      } catch {}
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [restaurant.id]);
 
   // Initialize menu items: DB first, fallback to localStorage
   useEffect(() => {
@@ -87,6 +108,7 @@ export const Dashboard = ({ restaurant, onLogout, onRestaurantUpdate }: Dashboar
       description: (formData.get('description') as string) || undefined,
       imageUrl: (formData.get('imageUrl') as string) || undefined,
       isAvailable: formData.get('isAvailable') === 'true',
+      isFeatured: formData.get('isFeatured') === 'true',
     };
 
     try {
@@ -138,11 +160,22 @@ export const Dashboard = ({ restaurant, onLogout, onRestaurantUpdate }: Dashboar
     saveToStorage(newItems);
   };
 
+  const handleToggleFeatured = async (id: string, isFeatured: boolean) => {
+    try {
+      await restaurantService.toggleFeatured(id, isFeatured);
+      const newItems = menuItems.map(item => item.id === id ? { ...item, isFeatured } : item);
+      saveToStorage(newItems);
+    } catch (err) {
+      console.error('Failed to toggle featured:', err);
+    }
+  };
+
   const [settingsName, setSettingsName] = useState(restaurant.name);
   const [settingsDesc, setSettingsDesc] = useState(restaurant.description);
   const [settingsImageUrl, setSettingsImageUrl] = useState(restaurant.imageUrl || '');
   const [settingsLat, setSettingsLat] = useState(String(restaurant.location?.lat || ''));
   const [settingsLng, setSettingsLng] = useState(String(restaurant.location?.lng || ''));
+  const [settingsCuisine, setSettingsCuisine] = useState(restaurant.cuisine || '');
   const [settingsOpeningHours, setSettingsOpeningHours] = useState(restaurant.openingHours || '');
   const [settingsUsername, setSettingsUsername] = useState('');
   const [settingsEmail, setSettingsEmail] = useState('');
@@ -177,6 +210,7 @@ export const Dashboard = ({ restaurant, onLogout, onRestaurantUpdate }: Dashboar
       const updated = await restaurantService.updateRestaurant(restaurant.id, {
         name: settingsName,
         description: settingsDesc,
+        cuisine: settingsCuisine || undefined,
         imageUrl: settingsImageUrl || undefined,
         openingHours: settingsOpeningHours || undefined,
         address: settingsAddress || undefined,
@@ -244,13 +278,14 @@ export const Dashboard = ({ restaurant, onLogout, onRestaurantUpdate }: Dashboar
 
         <main className="flex-1 overflow-y-auto px-10 py-8">
           <AnimatePresence mode="wait">
-            {activeTab === 'overview' && <OverviewTab menuItems={menuItems} restaurant={restaurant} />}
+            {activeTab === 'overview' && <OverviewTab menuItems={menuItems} restaurant={restaurant} entryCount={entryCount} audioPlayCount={audioPlayCount} />}
             {activeTab === 'menu' && (
               <MenuTab 
                 menuItems={menuItems} 
                 setIsAddingItem={setIsAddingItem} 
                 setEditingItem={setEditingItem} 
                 handleDeleteItem={handleDeleteItem} 
+                handleToggleFeatured={handleToggleFeatured}
               />
             )}
             {activeTab === 'settings' && (
@@ -265,6 +300,8 @@ export const Dashboard = ({ restaurant, onLogout, onRestaurantUpdate }: Dashboar
                 setSettingsLat={setSettingsLat}
                 settingsLng={settingsLng}
                 setSettingsLng={setSettingsLng}
+                settingsCuisine={settingsCuisine}
+                setSettingsCuisine={setSettingsCuisine}
                 settingsOpeningHours={settingsOpeningHours}
                 setSettingsOpeningHours={setSettingsOpeningHours}
                 settingsUsername={settingsUsername}

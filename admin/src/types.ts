@@ -57,7 +57,21 @@ export interface AudioGuide {
   updatedAt?: string;
 }
 
-export type AppState = 'login' | 'dashboard' | 'pois' | 'restaurants' | 'audio' | 'qr';
+export type AppState = 'login' | 'dashboard' | 'pois' | 'restaurants' | 'audio' | 'qr' | 'owner_approval';
+
+export interface RestaurantOwner {
+  id: string;
+  email: string;
+  username: string;
+  name: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  restaurants?: {
+    id: string;
+    name: string;
+    address?: string | null;
+  }[];
+}
 
 // ─── Auth & API types ────────────────────────────────────────────────────────
 

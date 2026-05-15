@@ -14,8 +14,8 @@ export const authService = {
     return apiClient.post<LoginResult>('/auth/owner/login', { identifier, password });
   },
 
-  async register(email: string, password: string, name: string, username: string, address?: string): Promise<SystemUser> {
-    return apiClient.post<SystemUser>('/auth/owner/register', { username, email, password, name, address });
+  async register(email: string, password: string, name: string, username: string, address?: string, description?: string, cuisine?: string, openingHours?: string): Promise<SystemUser> {
+    return apiClient.post<SystemUser>('/auth/owner/register', { username, email, password, name, address, description, cuisine, openingHours });
   },
 
   logout(): void {

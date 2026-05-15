@@ -12,6 +12,7 @@ const mapRestaurant = (data: RestaurantData, user: SystemUser): Restaurant => ({
   ownerEmail: user.email,
   name: data.name,
   description: data.description,
+  cuisine: data.cuisine,
   location: {
     lat: data.poi?.lat ?? 10.7769,
     lng: data.poi?.lng ?? 106.7009,

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Plus, Edit3, Trash2, UtensilsCrossed } from 'lucide-react';
+import { Search, Plus, Edit3, Trash2, UtensilsCrossed, Star } from 'lucide-react';
 import { MenuItem } from '../../types';
 
 interface MenuTabProps {
@@ -8,6 +8,7 @@ interface MenuTabProps {
   setIsAddingItem: (isAdding: boolean) => void;
   setEditingItem: (item: MenuItem | null) => void;
   handleDeleteItem: (id: string) => void;
+  handleToggleFeatured: (id: string, isFeatured: boolean) => void;
 }
 
 const categoryColors: Record<string, string> = {
@@ -22,7 +23,8 @@ export const MenuTab = ({
   menuItems,
   setIsAddingItem,
   setEditingItem,
-  handleDeleteItem
+  handleDeleteItem,
+  handleToggleFeatured
 }: MenuTabProps) => {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
@@ -96,6 +98,17 @@ export const MenuTab = ({
                     <p className="text-emerald-600 font-bold mt-1.5">{item.price.toLocaleString()}đ</p>
                   </div>
                   <div className="flex gap-1 shrink-0 ml-3">
+                    <button
+                      onClick={() => handleToggleFeatured(item.id, !item.isFeatured)}
+                      className={`p-2 rounded-lg transition-all ${
+                        item.isFeatured
+                          ? 'text-amber-500 hover:text-amber-600 hover:bg-amber-50'
+                          : 'text-slate-300 hover:text-amber-500 hover:bg-amber-50'
+                      }`}
+                      title={item.isFeatured ? 'Bỏ nổi bật' : 'Đánh dấu nổi bật'}
+                    >
+                      <Star className="w-4 h-4" fill={item.isFeatured ? 'currentColor' : 'none'} />
+                    </button>
                     <button
                       onClick={() => { setEditingItem(item); setIsAddingItem(true); }}
                       className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"

@@ -170,6 +170,28 @@ export const restaurantService = {
     return { total, approved, pending, rejected };
   },
 
+  async incrementEntry(id: string) {
+    return prisma.restaurant.update({
+      where: { id },
+      data: { entryCount: { increment: 1 } },
+    });
+  },
+
+  async incrementAudioPlay(id: string) {
+    return prisma.restaurant.update({
+      where: { id },
+      data: { audioPlayCount: { increment: 1 } },
+    });
+  },
+
+  async getOwnerStats(id: string) {
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id },
+      select: { entryCount: true, audioPlayCount: true },
+    });
+    return restaurant ?? { entryCount: 0, audioPlayCount: 0 };
+  },
+
   async getNearby(lat: number, lng: number, radiusKm: number = 5) {
     const restaurants = await prisma.restaurant.findMany({
       where: { status: 'approved' },

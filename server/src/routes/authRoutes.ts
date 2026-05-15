@@ -31,6 +31,9 @@ router.post('/owner/register', validate(z.object({
   password: z.string().min(6),
   name: z.string().min(1),
   address: z.string().optional(),
+  description: z.string().optional(),
+  cuisine: z.string().optional(),
+  openingHours: z.string().optional(),
 })), ownerAuthController.register);
 router.post('/owner/login', validate(z.object({
   identifier: z.string().min(1),

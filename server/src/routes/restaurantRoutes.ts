@@ -26,6 +26,7 @@ const createMenuItemSchema = z.object({
   category: z.string().optional(),
   imageUrl: z.string().optional(),
   isAvailable: z.boolean().optional(),
+  isFeatured: z.boolean().optional(),
 });
 
 const updateMenuItemSchema = createMenuItemSchema.partial();
@@ -52,5 +53,8 @@ router.delete('/menu/:id', authenticateOwner, menuController.delete);
 
 // Tracking
 router.post('/:id/view', authenticateAny, restaurantController.incrementViews);
+router.post('/:id/enter', authenticateAny, restaurantController.incrementEntry);
+router.post('/:id/audio-play', authenticateAny, restaurantController.incrementAudioPlay);
+router.get('/:id/stats', authenticateAny, restaurantController.getOwnerStats);
 
 export default router;

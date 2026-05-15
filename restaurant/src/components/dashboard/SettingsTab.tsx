@@ -13,6 +13,8 @@ interface SettingsTabProps {
   setSettingsLat: (lat: string) => void;
   settingsLng: string;
   setSettingsLng: (lng: string) => void;
+  settingsCuisine: string;
+  setSettingsCuisine: (cuisine: string) => void;
   settingsOpeningHours: string;
   setSettingsOpeningHours: (hours: string) => void;
   settingsUsername: string;
@@ -56,6 +58,7 @@ export const SettingsTab = ({
   settingsImageUrl, setSettingsImageUrl,
   settingsLat, setSettingsLat,
   settingsLng, setSettingsLng,
+  settingsCuisine, setSettingsCuisine,
   settingsOpeningHours, setSettingsOpeningHours,
   settingsUsername, setSettingsUsername,
   settingsEmail, setSettingsEmail,
@@ -154,6 +157,16 @@ export const SettingsTab = ({
                 rows={4}
                 value={settingsDesc}
                 onChange={(e) => setSettingsDesc(e.target.value)}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-emerald-500/20 outline-none"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-700">Loại ẩm thực</label>
+              <input
+                type="text"
+                value={settingsCuisine}
+                onChange={(e) => setSettingsCuisine(e.target.value)}
+                placeholder="VD: Việt Nam, Hàn Quốc..."
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-emerald-500/20 outline-none"
               />
             </div>
